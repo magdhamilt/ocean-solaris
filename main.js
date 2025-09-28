@@ -35,7 +35,7 @@ document.addEventListener('mousemove', (event) => {
     }
 });
 
-// Mouse wheel for zooming
+// Mouse wheel for zooming (optional)
 document.addEventListener('wheel', (event) => {
     event.preventDefault();
     cameraDistance += event.deltaY * 0.01;
