@@ -1,8 +1,10 @@
 import * as THREE from 'three';
+import SolarisFog from './fog.js';
 
 //Scene
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+const fog = new SolarisFog(scene);
 
 
    //Camera - positioned on the surface
@@ -146,6 +148,8 @@ const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.inner
         function animate () {
             requestAnimationFrame(animate);
             ectoplasmMaterial.uniforms.uTime.value = clock.getElapsedTime();
+
+             fog.update(clock.getDelta());
             
             // Surface exploration movement
             if (keys['w'] || keys['arrowup']) {
@@ -163,6 +167,7 @@ const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.inner
             if (keys['d'] || keys['arrowright']) {
                 camera.position.x -= Math.cos(cameraAngleY) * moveSpeed;
                 camera.position.z += Math.sin(cameraAngleY) * moveSpeed;
+               
             }
 
             // Keep camera on planet surface
