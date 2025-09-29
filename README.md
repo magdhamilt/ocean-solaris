@@ -5,9 +5,9 @@ A simulation of a gelatinous, shape-shifting ocean inspired by Stanislaw Lem’s
 This project aims to bring to life the mysterious, ever-changing alien entity from the classic sci-fi novel, featuring dynamic morphing, ethereal movements, and hypnotic visual patterns. 
 
 ## Table of Contents
-- [Features] (#Features)
-- [Camera Controls] (#Camera Controls)
-- [Technical Details] (#Technical Details)
+- [Features](#features)
+- [Camera Controls](#camera-controls)
+- [Technical Details](#technical-details)
 
 ## Features
 
