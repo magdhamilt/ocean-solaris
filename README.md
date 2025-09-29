@@ -8,6 +8,7 @@ This project aims to bring to life the mysterious, ever-changing alien entity fr
 - [Features](#features)
 - [Camera Controls](#camera-controls)
 - [Technical Details](#technical-details)
+- [Links](#links)
 
 ## Features
 
@@ -51,3 +52,9 @@ The simulation uses a custom WebGL shader system for realistic ocean rendering:
 - **Fragment Shader**: Creates the gelatinous, semi-translucent appearance.
 - **Perlin Noise**: Generates organic movement patterns.
 - **Simplex Noise**: Creates spontaneous formation structures. 
+
+## Links
+[Demo link](https://magdhamilt.github.io/ocean-solaris/)
+[Three.js Documentation](https://threejs.org/docs/)
+[Solaris (novel) - Wikipedia](https://en.wikipedia.org/wiki/Solaris_(novel))
+
