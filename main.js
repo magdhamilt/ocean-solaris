@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import SolarisFog from './fog.js';
+import SolarisSimulacra from './simulacra.js';
 
 //Scene
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 const fog = new SolarisFog(scene);
+const simulacra = new SolarisSimulacra(scene, 5);
 
 //Camera - positioned on the surface        
 camera.position.set(0, 5.1, 0); // Just above the surface (radius is 5)
@@ -155,9 +157,12 @@ const clock = new THREE.Clock();
 
 function animate () {
     requestAnimationFrame(animate);
+    const deltaTime = clock.getDelta();
+
     ectoplasmMaterial.uniforms.uTime.value = clock.getElapsedTime();
 
     fog.update(clock.getDelta());
+    simulacra.update(deltaTime);
     
     // Enhanced movement system - surface movement when close, orbital when far
     const surfaceThreshold = 8.0; // Distance threshold for switching movement modes
