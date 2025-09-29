@@ -54,7 +54,10 @@ The simulation uses a custom WebGL shader system for realistic ocean rendering:
 - **Simplex Noise**: Creates spontaneous formation structures. 
 
 ## Links
+
 [Demo link](https://magdhamilt.github.io/ocean-solaris/)
+
 [Three.js Documentation](https://threejs.org/docs/)
+
 [Solaris (novel) - Wikipedia](https://en.wikipedia.org/wiki/Solaris_(novel))
 
