@@ -4,6 +4,11 @@ A simulation of a gelatinous, shape-shifting ocean inspired by Stanislaw Lem’s
 
 This project aims to bring to life the mysterious, ever-changing alien entity from the classic sci-fi novel, featuring dynamic morphing, ethereal movements, and hypnotic visual patterns. 
 
+## Table of Contents
+- [Features] (#Features)
+- [Camera Controls] (#Camera Controls)
+- [Technical Details] (#Technical Details)
+
 ## Features
 
 - **Dynamic Ocean Simulation**: Continuously morphing gelatinous surface with realistic undulation.
@@ -35,3 +40,14 @@ This project aims to bring to life the mysterious, ever-changing alien entity fr
 ## Live Demo
 
 [Ocean Solaris Demo](https://magdhamilt.github.io/ocean-solaris/)
+
+## Technical Details
+
+### Architecture
+
+The simulation uses a custom WebGL shader system for realistic ocean rendering:
+
+- **Vertex Shader**: Handles wave displacement and morphing animations. 
+- **Fragment Shader**: Creates the gelatinous, semi-translucent appearance.
+- **Perlin Noise**: Generates organic movement patterns.
+- **Simplex Noise**: Creates spontaneous formation structures. 
