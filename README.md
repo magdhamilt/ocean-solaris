@@ -17,16 +17,18 @@ This project aims to bring to life the mysterious, ever-changing alien entity fr
 
 **Movement:**
 - **WASD/Arrow Keys**: Move around
-- **When close**: Walk on surface
-- **When far**: Orbit around planet
+  - **When close**: Walk on surface
+  - **When far**: Orbit around planet
 
 **Look Around:**
+- **Mouse drag**: Look around
 - **I**: Look up
 - **K**: Look down
 - **J**: Look left
 - **L**: Look right
 
-**Zoom**
+**Zoom:**
+- **Mouse wheel**: Zoom in/out
 - **Q or Space**: Zoom out
 - **E or Shift**: Zoom in
 
