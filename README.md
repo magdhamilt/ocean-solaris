@@ -4,6 +4,8 @@ A simulation of a gelatinous, shape-shifting ocean inspired by Stanislaw Lem’s
 
 This project aims to bring to life the mysterious, ever-changing alien entity from the classic sci-fi novel, featuring dynamic morphing, ethereal movements, and hypnotic visual patterns. 
 
+Demo available [here](https://magdhamilt.github.io/ocean-solaris/).
+
 ## Table of Contents
 - [Features](#features)
 - [Camera Controls](#camera-controls)
@@ -37,10 +39,6 @@ This project aims to bring to life the mysterious, ever-changing alien entity fr
 - **Mouse wheel**: Zoom in/out
 - **Q or Space**: Zoom out
 - **E or Shift**: Zoom in
-
-## Live Demo
-
-[Ocean Solaris Demo](https://magdhamilt.github.io/ocean-solaris/)
 
 ## Technical Details
 
