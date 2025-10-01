@@ -202,10 +202,24 @@ export function createSuns(scene) {
         suns.push(redSun, blueSun);
     }
 
-    // Animation update function with realistic sky arc motion
+    // Animation update function with orbital instability and ocean correction
     function update(deltaTime) {
         time += deltaTime;
 
+        // Calculate gravitational chaos between the two suns
+        // This represents the n-body problem that should destabilize the orbit
+        let redSunAngle = 0;
+        let blueSunAngle = 0;
+        
+        if (suns.length >= 2) {
+            redSunAngle = time * suns[0].orbitConfig.speed + suns[0].orbitConfig.phaseOffset;
+            blueSunAngle = time * suns[1].orbitConfig.speed + suns[1].orbitConfig.phaseOffset;
+        }
+        
+        // Gravitational interference between suns (should cause chaos)
+        const sunInterference = Math.sin(redSunAngle - blueSunAngle) * Math.cos(time * 0.3);
+        const resonanceEffect = Math.sin(time * 0.17) * Math.cos(time * 0.23); // Chaotic frequencies
+        
         suns.forEach((sun, index) => {
             const orbit = sun.orbitConfig;
             
@@ -220,8 +234,28 @@ export function createSuns(scene) {
             const tiltedY = baseY * Math.cos(orbit.tilt);
             const tiltedZ = -baseY * Math.sin(orbit.tilt);
             
-            // Set sun position (planet is at origin)
-            sun.group.position.set(baseX, tiltedY, tiltedZ);
+            // GRAVITATIONAL CHAOS - what should happen without the ocean
+            // Multiple chaotic perturbations at different frequencies
+            const chaosMagnitude = orbit.radius * 0.08; // 8% deviation would be catastrophic
+            
+            const chaosX = Math.sin(time * 0.31 + index * Math.PI) * chaosMagnitude * sunInterference;
+            const chaosY = Math.cos(time * 0.19 + index * 1.5) * chaosMagnitude * resonanceEffect;
+            const chaosZ = Math.sin(time * 0.27 + index * 0.7) * chaosMagnitude * (sunInterference + resonanceEffect) * 0.5;
+            
+            // OCEAN'S STABILIZING CORRECTION
+            // The ocean "senses" and counteracts 95% of the chaos
+            // Leaving only 5% as visible "shimmer" - proof of the work being done
+            const oceanCorrectionFactor = 0.95;
+            const stabilizedChaosX = chaosX * (1.0 - oceanCorrectionFactor);
+            const stabilizedChaosY = chaosY * (1.0 - oceanCorrectionFactor);
+            const stabilizedChaosZ = chaosZ * (1.0 - oceanCorrectionFactor);
+            
+            // Set sun position with subtle remaining instability
+            sun.group.position.set(
+                baseX + stabilizedChaosX, 
+                tiltedY + stabilizedChaosY, 
+                tiltedZ + stabilizedChaosZ
+            );
             
             // Slower, more mysterious rotation
             sun.sunMesh.rotation.y += deltaTime * 0.05;
