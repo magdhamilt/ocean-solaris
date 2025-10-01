@@ -47,10 +47,10 @@ document.addEventListener('wheel', (event) => {
 });
 
 //Lights
-const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-dirLight.position.set(20, 20, 20);
-scene.add(dirLight);
-scene.add(new THREE.AmbientLight(0x404040));
+// const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+// dirLight.position.set(20, 20, 20);
+// scene.add(dirLight);
+// scene.add(new THREE.AmbientLight(0x404040));
 
 //Environment Map for Metallic Reflection
 const loader = new THREE.CubeTextureLoader();
