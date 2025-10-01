@@ -10,6 +10,9 @@ const fog = new SolarisFog(scene);
 const simulacra = new SolarisSimulacra(scene, 5);
 const suns = createSuns(scene);
 
+// Connect fog to suns for dynamic color mixing
+fog.setSunData(suns.getSuns());
+
 //Camera - positioned on the surface        
 camera.position.set(0, 5.1, 0); // Just above the surface (radius is 5)
 
