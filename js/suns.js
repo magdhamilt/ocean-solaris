@@ -47,7 +47,8 @@ export function createSuns(scene) {
                 vNormal = normalize(normalMatrix * normal);
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
             }
-                
+                `,
+
         fragmentShader: `
             uniform float uTime;
             uniform vec3 uColor;
@@ -88,11 +89,8 @@ export function createSuns(scene) {
                 
                 gl_FragColor = vec4(color, 1.0);
             }
-
-    
-
-
-        })
+         `
+        });
     }
 
     // Create inidividual sun
@@ -101,11 +99,7 @@ export function createSuns(scene) {
 
         // Core sun sphere
         const sunGeometry = new THREE.SphereGeometry(config.size, 32, 32);
-        const sunMaterial = new THREE.MeshBasicMaterial({
-            color: config.color,
-            emissive: config.color,
-            emissiveIntensity: 1
-        });
+        const sunMaterial = createSunShaderMaterial(config.color);
         const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
         group.add(sunMesh);
 
