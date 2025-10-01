@@ -93,7 +93,7 @@ export function createSuns(scene) {
         });
     }
 
-    // Create inidividual sun
+    // Create individual sun
     function createSun(config) {
         const group = new THREE.Group();
 
@@ -149,15 +149,13 @@ export function createSuns(scene) {
             sprite,
             light,
             pointLight,
-            basePosition: config.position.clone(),
-            orbitRadius: 15,
-            orbitSpeed: config.size > 15 ? 0.05 : 0.08
+            orbitConfig: config.orbit
         };
     }
 
     // Initialize both suns
     function init() {
-        // Red sun (larger, primary)
+        // Red sun (larger, primary) - traverses sky from east to west
         const redSun = createSun({
             color: 0xff4400,
             position: new THREE.Vector3(150, 80, -200),
@@ -165,10 +163,16 @@ export function createSuns(scene) {
             glowSize: 45,
             glowColor: 0xff6622,
             lightIntensity: 1.2,
-            lightColor: 0xffaa88
+            lightColor: 0xffaa88,
+            orbit: {
+                radius: 250,           // Large orbital radius for dramatic movement
+                speed: 0.08,           // Speed of orbit (radians per second)
+                tilt: Math.PI / 6,     // Tilt of orbital plane (30 degrees)
+                phaseOffset: 0         // Starting position in orbit
+            }
         });
 
-        // Blue sun (smaller, secondary)
+        // Blue sun (smaller, secondary) - different orbital path
         const blueSun = createSun({
             color: 0x4488ff,
             position: new THREE.Vector3(-120, 60, -180),
@@ -176,36 +180,60 @@ export function createSuns(scene) {
             glowSize: 30,
             glowColor: 0x6699ff,
             lightIntensity: 0.8,
-            lightColor: 0x88ccff
+            lightColor: 0x88ccff,
+            orbit: {
+                radius: 220,                    // Slightly smaller orbit
+                speed: 0.12,                    // Faster orbit (shorter "day")
+                tilt: -Math.PI / 8,             // Different tilt (-22.5 degrees)
+                phaseOffset: Math.PI / 2        // Start 90 degrees ahead
+            }
         });
 
         suns.push(redSun, blueSun);
     }
 
-    // Animation update function
+    // Animation update function with realistic sky arc motion
     function update(deltaTime) {
         time += deltaTime;
 
         suns.forEach((sun, index) => {
-            // Gentle orbital motion
-            const angle = time * sun.orbitSpeed + (index * Math.PI);
-            const offsetX = Math.cos(angle) * sun.orbitRadius;
-            const offsetY = Math.sin(angle * 0.5) * sun.orbitRadius * 0.3;
-
-            sun.group.position.x = sun.basePosition.x + offsetX;
-            sun.group.position.y = sun.basePosition.y + offsetY;
-
-            // Rotate sun
+            const orbit = sun.orbitConfig;
+            
+            // Calculate angle in orbit
+            const angle = time * orbit.speed + orbit.phaseOffset;
+            
+            // Create circular orbit in XZ plane
+            const baseX = Math.cos(angle) * orbit.radius;
+            const baseY = Math.sin(angle) * orbit.radius;
+            
+            // Apply orbital tilt to create varied sky paths
+            // This rotates the orbit around the X axis
+            const tiltedY = baseY * Math.cos(orbit.tilt);
+            const tiltedZ = -baseY * Math.sin(orbit.tilt);
+            
+            // Set sun position (planet is at origin)
+            sun.group.position.set(baseX, tiltedY, tiltedZ);
+            
+            // Rotate sun on its axis
             sun.sunMesh.rotation.y += deltaTime * 0.1;
             sun.sunMesh.material.uniforms.uTime.value = time;
-
+            
+            // Dynamic intensity based on height above horizon
+            // Suns dim when below horizon (y < 0)
+            const heightFactor = Math.max(0, sun.group.position.y) / orbit.radius;
+            const intensityMultiplier = 0.3 + heightFactor * 0.7; // Min 30%, max 100%
+            
             // Pulsing glow effect
             const pulse = Math.sin(time * 2 + index) * 0.1 + 0.9;
-            sun.glowMesh.material.opacity = 0.3 * pulse;
-            sun.sprite.material.opacity = 0.5 * pulse;
-
-            // Update light positions
+            sun.glowMesh.material.opacity = 0.3 * pulse * intensityMultiplier;
+            sun.sprite.material.opacity = 0.5 * pulse * intensityMultiplier;
+            
+            // Update lights with dynamic intensity
+            sun.light.intensity = sun.orbitConfig.speed > 0.1 ? 0.8 : 1.2;
+            sun.light.intensity *= intensityMultiplier;
             sun.light.position.copy(sun.group.position);
+            
+            sun.pointLight.intensity = (sun.orbitConfig.speed > 0.1 ? 0.4 : 0.6) * intensityMultiplier;
             sun.pointLight.position.copy(sun.group.position);
         });
     }
