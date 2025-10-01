@@ -197,6 +197,7 @@ export function createSuns(scene) {
 
             // Rotate sun
             sun.sunMesh.rotation.y += deltaTime * 0.1;
+            sun.sunMesh.material.uniforms.uTime.value = time;
 
             // Pulsing glow effect
             const pulse = Math.sin(time * 2 + index) * 0.1 + 0.9;
