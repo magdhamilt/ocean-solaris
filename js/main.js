@@ -39,18 +39,12 @@ document.addEventListener('mousemove', (event) => {
     }
 });
 
-// Mouse wheel for zooming (optional)
+// Mouse wheel for zooming
 document.addEventListener('wheel', (event) => {
     event.preventDefault();
     cameraDistance += event.deltaY * 0.01;
     cameraDistance = Math.max(minDistance, Math.min(maxDistance, cameraDistance));
 });
-
-//Lights
-// const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-// dirLight.position.set(20, 20, 20);
-// scene.add(dirLight);
-// scene.add(new THREE.AmbientLight(0x404040));
 
 //Environment Map for Metallic Reflection
 const loader = new THREE.CubeTextureLoader();
@@ -65,16 +59,35 @@ const envMap = loader.load([
 
 scene.environment = envMap;
 
-//Shader Material
+//Color Palette - Solaris Theme
+const colorPalette = {
+    redSun: new THREE.Color(0xE07A5F),
+    blueSun: new THREE.Color(0x3D5A80),
+    oceanBase: new THREE.Color(0x6A4C93),
+    oceanHighlight1: new THREE.Color(0xF2CC8F),
+    oceanHighlight2: new THREE.Color(0xD9B3FF),
+    accentRed: new THREE.Color(0xFF6B6B),
+    accentBlue: new THREE.Color(0x8EE3EF)
+};
+
+//Shader Material with Dynamic Sun Influence
 const uniforms = {
     uTime: {value: 0.0},
-    uColor: { value: new THREE.Color(0xf0b7cd)}, // Powder pink
-    uMetalness: { value: 0.15},
-    uRoughness: { value: 0.4},
-    uOpacity: { value: 0.8},
-    uGlowIntensity: { value: 1.0},
-    uFresnelPower: { value: 2.5},
+    uOceanBase: { value: colorPalette.oceanBase},
+    uHighlight1: { value: colorPalette.oceanHighlight1},
+    uHighlight2: { value: colorPalette.oceanHighlight2},
+    uRedSunColor: { value: colorPalette.redSun},
+    uBlueSunColor: { value: colorPalette.blueSun},
+    uAccentRed: { value: colorPalette.accentRed},
+    uAccentBlue: { value: colorPalette.accentBlue},
+    uMetalness: { value: 0.2},
+    uRoughness: { value: 0.35},
+    uOpacity: { value: 0.85},
+    uGlowIntensity: { value: 0.8},
+    uFresnelPower: { value: 2.8},
     uEnvMap: { value: envMap },
+    uRedSunPos: { value: new THREE.Vector3(15, 8, 5)},
+    uBlueSunPos: { value: new THREE.Vector3(-12, 6, -8)},
 };
 
 const vertexShader = `
@@ -82,6 +95,7 @@ uniform float uTime;
 varying vec3 vNormal;
 varying vec3 vViewDir;
 varying vec3 vPos;
+varying vec3 vWorldPos;
 
 float blobWave(vec3 pos, float speed, float freq, float amp){
     return sin(pos.x*freq + uTime*speed)* amp +
@@ -103,6 +117,8 @@ void main() {
     pos += normalize(pos)*sin(uTime + pos.x*2.0+pos.y*2.0+pos.z*2.0)*0.05;
 
     vNormal = normalize(normalMatrix*normal);
+    vec4 worldPos = modelMatrix * vec4(pos, 1.0);
+    vWorldPos = worldPos.xyz;
     vViewDir = normalize((modelViewMatrix*vec4(pos, 1.0)).xyz);
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
@@ -111,30 +127,80 @@ void main() {
 
 const fragmentShader = `
 uniform float uTime;
-uniform vec3 uColor;
+uniform vec3 uOceanBase;
+uniform vec3 uHighlight1;
+uniform vec3 uHighlight2;
+uniform vec3 uRedSunColor;
+uniform vec3 uBlueSunColor;
+uniform vec3 uAccentRed;
+uniform vec3 uAccentBlue;
 uniform float uMetalness;
 uniform float uRoughness;
 uniform float uOpacity;
 uniform float uGlowIntensity;
 uniform float uFresnelPower;
 uniform samplerCube uEnvMap;
+uniform vec3 uRedSunPos;
+uniform vec3 uBlueSunPos;
 
 varying vec3 vNormal;
 varying vec3 vViewDir;
 varying vec3 vPos;
+varying vec3 vWorldPos;
 
 void main() {
-    float fresnel = pow(1.0 - dot(vNormal, normalize(vViewDir)), uFresnelPower);
-    vec3 reflected = reflect(-vViewDir, normalize(vNormal));
-    vec3 envColor = textureCube(uEnvMap, reflected).rgb;
-
-    // Make the base color more dominant
-    vec3 color = mix(uColor, envColor * uColor, uMetalness);
-
-    float pulse = 0.5 + 0.5 * sin(vPos.x*2.0 + vPos.y*2.0 + vPos.z*2.0 + uTime*3.0);
+    vec3 norm = normalize(vNormal);
     
-    // Add pink-tinted glow
-    color += fresnel * uColor * uGlowIntensity * pulse;
+    // Calculate sun influences based on distance and angle
+    vec3 toRedSun = normalize(uRedSunPos - vWorldPos);
+    vec3 toBlueSun = normalize(uBlueSunPos - vWorldPos);
+    
+    float redSunInfluence = max(0.0, dot(norm, toRedSun)) * 0.4;
+    float blueSunInfluence = max(0.0, dot(norm, toBlueSun)) * 0.4;
+    
+    // Distance-based falloff for more realistic lighting
+    float redDist = length(uRedSunPos - vWorldPos);
+    float blueDist = length(uBlueSunPos - vWorldPos);
+    redSunInfluence *= 1.0 / (1.0 + redDist * 0.02);
+    blueSunInfluence *= 1.0 / (1.0 + blueDist * 0.02);
+    
+    // Dynamic color mixing based on sun positions
+    vec3 sunTint = uRedSunColor * redSunInfluence + uBlueSunColor * blueSunInfluence;
+    
+    // Depth-based color variation (gelatinous effect)
+    float depthFactor = (vPos.y + 5.0) / 10.0; // Normalize based on sphere radius
+    vec3 depthColor = mix(uOceanBase, uHighlight2, depthFactor * 0.3);
+    
+    // Movement-based iridescence
+    float iridescence = sin(vPos.x * 3.0 + vPos.y * 2.0 + vPos.z * 4.0 + uTime * 2.0) * 0.5 + 0.5;
+    vec3 iridescentColor = mix(uHighlight1, uHighlight2, iridescence);
+    
+    // Base ocean color with depth and iridescence
+    vec3 baseColor = mix(depthColor, iridescentColor, 0.15);
+    
+    // Add sun tinting
+    baseColor = mix(baseColor, baseColor * (1.0 + sunTint), 0.6);
+    
+    // Fresnel effect for gelatinous look
+    float fresnel = pow(1.0 - dot(norm, normalize(vViewDir)), uFresnelPower);
+    
+    // Environment reflection with color tinting
+    vec3 reflected = reflect(-vViewDir, norm);
+    vec3 envColor = textureCube(uEnvMap, reflected).rgb;
+    vec3 tintedEnv = envColor * mix(uOceanBase, vec3(1.0), 0.5);
+    
+    // Combine base color with metallic reflection
+    vec3 color = mix(baseColor, tintedEnv, uMetalness * 0.8);
+    
+    // Pulsing glow with accent colors
+    float pulse = 0.5 + 0.5 * sin(vPos.x*2.0 + vPos.y*2.0 + vPos.z*2.0 + uTime*3.0);
+    vec3 glowColor = mix(uAccentRed, uAccentBlue, sin(uTime * 0.5) * 0.5 + 0.5);
+    
+    // Add subtle glow with fresnel
+    color += fresnel * glowColor * uGlowIntensity * pulse * 0.4;
+    
+    // Add sun-colored highlights at edges
+    color += fresnel * sunTint * 0.5;
 
     gl_FragColor = vec4(color, uOpacity);
 }
