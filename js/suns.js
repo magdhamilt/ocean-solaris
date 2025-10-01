@@ -6,6 +6,16 @@ export function createSuns(scene) {
     const glowSprites = [];
     let time = 0;
 
+    // Solaris color palette
+    const colorPalette = {
+        redSun: 0xE07A5F,        // Muted coral red
+        redGlow: 0xFF6B6B,       // Accent red for glow
+        redLight: 0xE09080,      // Warm light tint
+        blueSun: 0x3D5A80,       // Deep muted blue
+        blueGlow: 0x8EE3EF,      // Accent cyan for glow
+        blueLight: 0x6B8FAA      // Cool light tint
+    };
+
     //Create glow texture for corona effect
     function createGlowTexture(color) {
         const canvas = document.createElement('canvas');
@@ -30,13 +40,13 @@ export function createSuns(scene) {
         return new THREE.CanvasTexture(canvas);
     }
 
-    // Create shader material
+    // Create shader material with muted, alien appearance
     function createSunShaderMaterial(color) {
         return new THREE.ShaderMaterial({
             uniforms: {
                 uTime: { value: 0},
                 uColor: { value: new THREE.Color(color)},
-                uIntensity: { value: 1.5}
+                uIntensity: { value: 1.2}  // Reduced from 1.5 for more muted look
             },
             vertexShader: `
             varying vec2 vUv;
@@ -73,18 +83,18 @@ export function createSuns(scene) {
             }
 
             void main() {
-                // Create solar surface variation
-                vec2 uv = vUv * 8.0;
-                float n = noise(uv + uTime * 0.1);
-                n += noise(uv * 2.0 + uTime * 0.15) * 0.5;
-                n += noise(uv * 4.0 + uTime * 0.2) * 0.25;
+                // Create subtle solar surface variation (less turbulent for alien feel)
+                vec2 uv = vUv * 6.0;
+                float n = noise(uv + uTime * 0.08);
+                n += noise(uv * 2.0 + uTime * 0.12) * 0.5;
+                n += noise(uv * 3.5 + uTime * 0.18) * 0.25;
                 
-                // Edge darkening for sphere effect
-                float fresnel = pow(1.0 - dot(vNormal, vec3(0, 0, 1)), 2.0);
+                // Softer edge for mysterious appearance
+                float fresnel = pow(1.0 - dot(vNormal, vec3(0, 0, 1)), 1.5);
                 
-                // Combine effects
-                vec3 color = uColor * (0.8 + n * 0.4);
-                color *= (1.0 - fresnel * 0.3);
+                // More muted color combination
+                vec3 color = uColor * (0.7 + n * 0.3);
+                color *= (1.0 - fresnel * 0.4);
                 color *= uIntensity;
                 
                 gl_FragColor = vec4(color, 1.0);
@@ -103,12 +113,12 @@ export function createSuns(scene) {
         const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
         group.add(sunMesh);
 
-        // Atmospheric glow (inner)
+        // Atmospheric glow (inner) - more subtle
         const glowGeometry = new THREE.SphereGeometry(config.size * 1.3, 32, 32);
         const glowMaterial = new THREE.MeshBasicMaterial({
             color: config.glowColor,
             transparent: true,
-            opacity: 0.3,
+            opacity: 0.25,  // Reduced from 0.3
             side: THREE.BackSide
         });
         const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
@@ -118,7 +128,7 @@ export function createSuns(scene) {
         const spriteMaterial = new THREE.SpriteMaterial({
             map: createGlowTexture(config.glowColor),
             transparent: true,
-            opacity: 0.5,
+            opacity: 0.4,  // Reduced from 0.5
             blending: THREE.AdditiveBlending
         });
         const sprite = new THREE.Sprite(spriteMaterial);
@@ -130,15 +140,15 @@ export function createSuns(scene) {
         group.position.copy(config.position);
         scene.add(group);
 
-        // Add directional light
+        // Add directional light - more subtle
         const light = new THREE.DirectionalLight(config.lightColor, config.lightIntensity);
         light.position.copy(config.position);
         light.castShadow = false;
         scene.add(light);
         sunLights.push(light);
 
-        // Add point light for local illumination
-        const pointLight = new THREE.PointLight(config.color, config.lightIntensity * 0.5, 300);
+        // Add point light for local illumination - softer
+        const pointLight = new THREE.PointLight(config.color, config.lightIntensity * 0.4, 300);
         pointLight.position.copy(config.position);
         scene.add(pointLight);
 
@@ -153,39 +163,39 @@ export function createSuns(scene) {
         };
     }
 
-    // Initialize both suns
+    // Initialize both suns with new palette
     function init() {
-        // Red sun (larger, primary) - traverses sky from east to west
+        // Red sun (larger, primary) - muted coral/terracotta
         const redSun = createSun({
-            color: 0xff4400,
+            color: colorPalette.redSun,
             position: new THREE.Vector3(150, 80, -200),
             size: 20,
             glowSize: 45,
-            glowColor: 0xff6622,
-            lightIntensity: 1.2,
-            lightColor: 0xffaa88,
+            glowColor: colorPalette.redGlow,
+            lightIntensity: 0.9,  // Reduced from 1.2
+            lightColor: colorPalette.redLight,
             orbit: {
-                radius: 250,           // Large orbital radius for dramatic movement
-                speed: 0.08,           // Speed of orbit (radians per second)
-                tilt: Math.PI / 6,     // Tilt of orbital plane (30 degrees)
-                phaseOffset: 0         // Starting position in orbit
+                radius: 250,
+                speed: 0.08,
+                tilt: Math.PI / 6,
+                phaseOffset: 0
             }
         });
 
-        // Blue sun (smaller, secondary) - different orbital path
+        // Blue sun (smaller, secondary) - deep muted blue
         const blueSun = createSun({
-            color: 0x4488ff,
+            color: colorPalette.blueSun,
             position: new THREE.Vector3(-120, 60, -180),
             size: 12,
             glowSize: 30,
-            glowColor: 0x6699ff,
-            lightIntensity: 0.8,
-            lightColor: 0x88ccff,
+            glowColor: colorPalette.blueGlow,
+            lightIntensity: 0.6,  // Reduced from 0.8
+            lightColor: colorPalette.blueLight,
             orbit: {
-                radius: 220,                    // Slightly smaller orbit
-                speed: 0.12,                    // Faster orbit (shorter "day")
-                tilt: -Math.PI / 8,             // Different tilt (-22.5 degrees)
-                phaseOffset: Math.PI / 2        // Start 90 degrees ahead
+                radius: 220,
+                speed: 0.12,
+                tilt: -Math.PI / 8,
+                phaseOffset: Math.PI / 2
             }
         });
 
@@ -207,33 +217,31 @@ export function createSuns(scene) {
             const baseY = Math.sin(angle) * orbit.radius;
             
             // Apply orbital tilt to create varied sky paths
-            // This rotates the orbit around the X axis
             const tiltedY = baseY * Math.cos(orbit.tilt);
             const tiltedZ = -baseY * Math.sin(orbit.tilt);
             
             // Set sun position (planet is at origin)
             sun.group.position.set(baseX, tiltedY, tiltedZ);
             
-            // Rotate sun on its axis
-            sun.sunMesh.rotation.y += deltaTime * 0.1;
+            // Slower, more mysterious rotation
+            sun.sunMesh.rotation.y += deltaTime * 0.05;
             sun.sunMesh.material.uniforms.uTime.value = time;
             
             // Dynamic intensity based on height above horizon
-            // Suns dim when below horizon (y < 0)
             const heightFactor = Math.max(0, sun.group.position.y) / orbit.radius;
-            const intensityMultiplier = 0.3 + heightFactor * 0.7; // Min 30%, max 100%
+            const intensityMultiplier = 0.3 + heightFactor * 0.7;
             
-            // Pulsing glow effect
-            const pulse = Math.sin(time * 2 + index) * 0.1 + 0.9;
-            sun.glowMesh.material.opacity = 0.3 * pulse * intensityMultiplier;
-            sun.sprite.material.opacity = 0.5 * pulse * intensityMultiplier;
+            // Slower, more subtle pulsing for alien atmosphere
+            const pulse = Math.sin(time * 1.5 + index) * 0.08 + 0.92;
+            sun.glowMesh.material.opacity = 0.25 * pulse * intensityMultiplier;
+            sun.sprite.material.opacity = 0.4 * pulse * intensityMultiplier;
             
-            // Update lights with dynamic intensity
-            sun.light.intensity = sun.orbitConfig.speed > 0.1 ? 0.8 : 1.2;
+            // Update lights with softer intensity
+            sun.light.intensity = sun.orbitConfig.speed > 0.1 ? 0.6 : 0.9;
             sun.light.intensity *= intensityMultiplier;
             sun.light.position.copy(sun.group.position);
             
-            sun.pointLight.intensity = (sun.orbitConfig.speed > 0.1 ? 0.4 : 0.6) * intensityMultiplier;
+            sun.pointLight.intensity = (sun.orbitConfig.speed > 0.1 ? 0.3 : 0.5) * intensityMultiplier;
             sun.pointLight.position.copy(sun.group.position);
         });
     }
