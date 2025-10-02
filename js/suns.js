@@ -159,7 +159,9 @@ export function createSuns(scene) {
             sprite,
             light,
             pointLight,
-            orbitConfig: config.orbit
+            orbitConfig: config.orbit,
+            position: group.position, // Direct reference for engineering visualization
+            color: new THREE.Color(config.color) // Color reference for engineering
         };
     }
 
@@ -220,6 +222,9 @@ export function createSuns(scene) {
         const sunInterference = Math.sin(redSunAngle - blueSunAngle) * Math.cos(time * 0.3);
         const resonanceEffect = Math.sin(time * 0.17) * Math.cos(time * 0.23); // Chaotic frequencies
         
+        // Calculate total chaos magnitude for engineering intensity scaling
+        const totalChaos = Math.abs(sunInterference) + Math.abs(resonanceEffect);
+        
         suns.forEach((sun, index) => {
             const orbit = sun.orbitConfig;
             
@@ -257,6 +262,9 @@ export function createSuns(scene) {
                 tiltedZ + stabilizedChaosZ
             );
             
+            // Update the direct position reference for engineering visualization
+            sun.position = sun.group.position;
+            
             // Slower, more mysterious rotation
             sun.sunMesh.rotation.y += deltaTime * 0.05;
             sun.sunMesh.material.uniforms.uTime.value = time;
@@ -265,17 +273,22 @@ export function createSuns(scene) {
             const heightFactor = Math.max(0, sun.group.position.y) / orbit.radius;
             const intensityMultiplier = 0.3 + heightFactor * 0.7;
             
-            // Slower, more subtle pulsing for alien atmosphere
-            const pulse = Math.sin(time * 1.5 + index) * 0.08 + 0.92;
+            // Enhanced pulsing that correlates with chaos/engineering activity
+            // When chaos is high, suns pulse more dramatically (ocean is working harder)
+            const chaosPulse = 1.0 + (totalChaos * 0.15); // Subtle intensity increase during high chaos
+            const basePulse = Math.sin(time * 1.5 + index) * 0.08 + 0.92;
+            const pulse = basePulse * chaosPulse;
+            
             sun.glowMesh.material.opacity = 0.25 * pulse * intensityMultiplier;
             sun.sprite.material.opacity = 0.4 * pulse * intensityMultiplier;
             
-            // Update lights with softer intensity
-            sun.light.intensity = sun.orbitConfig.speed > 0.1 ? 0.6 : 0.9;
-            sun.light.intensity *= intensityMultiplier;
+            // Update lights with softer intensity and chaos response
+            const baseLightIntensity = sun.orbitConfig.speed > 0.1 ? 0.6 : 0.9;
+            sun.light.intensity = baseLightIntensity * intensityMultiplier * chaosPulse;
             sun.light.position.copy(sun.group.position);
             
-            sun.pointLight.intensity = (sun.orbitConfig.speed > 0.1 ? 0.3 : 0.5) * intensityMultiplier;
+            const basePointIntensity = sun.orbitConfig.speed > 0.1 ? 0.3 : 0.5;
+            sun.pointLight.intensity = basePointIntensity * intensityMultiplier * chaosPulse;
             sun.pointLight.position.copy(sun.group.position);
         });
     }
@@ -302,6 +315,10 @@ export function createSuns(scene) {
     return {
         update,
         dispose,
-        getSuns: () => suns 
+        getSuns: () => suns.map(sun => ({
+            position: sun.position,
+            color: sun.color,
+            group: sun.group
+        }))
     };
 }
