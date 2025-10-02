@@ -73,7 +73,7 @@ const colorPalette = {
     accentBlue: new THREE.Color(0x8EE3EF)
 };
 
-//Shader Material with Dynamic Sun Influence
+//Shader Material with Dynamic Sun Influence and Engineering Visualization
 const uniforms = {
     uTime: {value: 0.0},
     uOceanBase: { value: colorPalette.oceanBase},
@@ -91,6 +91,9 @@ const uniforms = {
     uEnvMap: { value: envMap },
     uRedSunPos: { value: new THREE.Vector3(15, 8, 5)},
     uBlueSunPos: { value: new THREE.Vector3(-12, 6, -8)},
+    // Engineering visualization controls
+    uEngineeringIntensity: { value: 1.5 }, // Overall engineering activity level
+    uEngineeringColor: { value: new THREE.Color(0xff9eb3) }, // Pinkish engineering glow
 };
 
 const vertexShader = `
@@ -99,6 +102,7 @@ varying vec3 vNormal;
 varying vec3 vViewDir;
 varying vec3 vPos;
 varying vec3 vWorldPos;
+varying vec2 vUv;
 
 float blobWave(vec3 pos, float speed, float freq, float amp){
     return sin(pos.x*freq + uTime*speed)* amp +
@@ -123,6 +127,12 @@ void main() {
     vec4 worldPos = modelMatrix * vec4(pos, 1.0);
     vWorldPos = worldPos.xyz;
     vViewDir = normalize((modelViewMatrix*vec4(pos, 1.0)).xyz);
+    
+    // Calculate UV coordinates for engineering patterns
+    vUv = vec2(
+        atan(pos.z, pos.x) / (2.0 * 3.14159) + 0.5,
+        asin(pos.y / length(pos)) / 3.14159 + 0.5
+    );
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 }
@@ -145,11 +155,74 @@ uniform float uFresnelPower;
 uniform samplerCube uEnvMap;
 uniform vec3 uRedSunPos;
 uniform vec3 uBlueSunPos;
+uniform float uEngineeringIntensity;
+uniform vec3 uEngineeringColor;
 
 varying vec3 vNormal;
 varying vec3 vViewDir;
 varying vec3 vPos;
 varying vec3 vWorldPos;
+varying vec2 vUv;
+
+// Noise functions for organic engineering patterns
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float fbm(vec2 p) {
+    float value = 0.0;
+    float amplitude = 0.5;
+    for(int i = 0; i < 4; i++) {
+        value += amplitude * noise(p);
+        p *= 2.0;
+        amplitude *= 0.5;
+    }
+    return value;
+}
+
+// Calculate engineering activity for a sun
+float calculateEngineeringZone(vec3 sunPos, vec3 sunColor, int sunIndex) {
+    vec3 normalizedPos = normalize(vWorldPos);
+    vec3 toSun = normalize(sunPos - vWorldPos);
+    
+    // Zone facing the sun - the ocean "knows" where the sun is
+    float sunAlignment = max(0.0, dot(normalizedPos, toSun));
+    float zoneIntensity = pow(sunAlignment, 2.0);
+    
+    // Organic pulsing patterns - like the ocean is breathing
+    vec2 pulseCoord = vUv * 4.0 + uTime * 0.08 * float(sunIndex + 1);
+    float pulse = fbm(pulseCoord);
+    pulse = sin(pulse * 6.28 + uTime * 1.5) * 0.5 + 0.5;
+    
+    // Distance-based waves - "pushing back" against the sun
+    float distance = length(vWorldPos - sunPos);
+    float wave = sin(distance * 0.4 - uTime * 2.5 + float(sunIndex) * 3.14159) * 0.5 + 0.5;
+    
+    // Create interference patterns where engineering is most active
+    float interference = sin(sunAlignment * 15.0 - uTime * 1.8) * 0.5 + 0.5;
+    interference = smoothstep(0.4, 0.6, interference);
+    
+    // Combine effects
+    float activity = zoneIntensity * pulse * wave;
+    activity = smoothstep(0.25, 0.85, activity);
+    
+    // Add sharp "organizing" rings - planetary-scale structures
+    float rings = sin(sunAlignment * 25.0 - uTime * 1.2) * 0.5 + 0.5;
+    activity += rings * zoneIntensity * interference * 0.4;
+    
+    return activity;
+}
 
 void main() {
     vec3 norm = normalize(vNormal);
@@ -170,8 +243,32 @@ void main() {
     // Dynamic color mixing based on sun positions
     vec3 sunTint = uRedSunColor * redSunInfluence + uBlueSunColor * blueSunInfluence;
     
+    // === ENGINEERING VISUALIZATION ===
+    // Calculate engineering activity for each sun
+    float redEngineering = calculateEngineeringZone(uRedSunPos, uRedSunColor, 0);
+    float blueEngineering = calculateEngineeringZone(uBlueSunPos, uBlueSunColor, 1);
+    
+    // Total engineering activity
+    float totalEngineering = (redEngineering + blueEngineering) * uEngineeringIntensity;
+    
+    // Create colored engineering zones - red sun creates warmer zones, blue sun cooler
+    vec3 redZoneColor = mix(uEngineeringColor, uRedSunColor, 0.3);
+    vec3 blueZoneColor = mix(uEngineeringColor, uBlueSunColor, 0.3);
+    vec3 engineeringGlow = redZoneColor * redEngineering + blueZoneColor * blueEngineering;
+    
+    // Edge enhancement - boundaries between zones are most active
+    float engineeringEdge = length(fwidth(totalEngineering)) * 60.0;
+    totalEngineering += engineeringEdge * 0.6;
+    totalEngineering = clamp(totalEngineering, 0.0, 1.0);
+    
+    // Create "neural network" patterns in highly active areas
+    float neuralPattern = fbm(vUv * 8.0 + uTime * 0.05);
+    neuralPattern = smoothstep(0.45, 0.55, neuralPattern);
+    totalEngineering += neuralPattern * totalEngineering * 0.3;
+    // === END ENGINEERING ===
+    
     // Depth-based color variation (gelatinous effect)
-    float depthFactor = (vPos.y + 5.0) / 10.0; // Normalize based on sphere radius
+    float depthFactor = (vPos.y + 5.0) / 10.0;
     vec3 depthColor = mix(uOceanBase, uHighlight2, depthFactor * 0.3);
     
     // Movement-based iridescence
@@ -183,6 +280,9 @@ void main() {
     
     // Add sun tinting
     baseColor = mix(baseColor, baseColor * (1.0 + sunTint), 0.6);
+    
+    // Blend in engineering activity - the ocean glows where it's "working"
+    baseColor = mix(baseColor, engineeringGlow, totalEngineering * 0.7);
     
     // Fresnel effect for gelatinous look
     float fresnel = pow(1.0 - dot(norm, normalize(vViewDir)), uFresnelPower);
@@ -204,6 +304,12 @@ void main() {
     
     // Add sun-colored highlights at edges
     color += fresnel * sunTint * 0.5;
+    
+    // Engineering zones add extra brightness - the ocean is "energized"
+    color += engineeringGlow * totalEngineering * 0.4;
+    
+    // Add engineering edge glow for extra detail
+    color += engineeringEdge * engineeringGlow * 0.3;
 
     gl_FragColor = vec4(color, uOpacity);
 }
@@ -235,6 +341,17 @@ function animate () {
     fog.update(clock.getDelta());
     simulacra.update(deltaTime);
     suns.update(deltaTime);
+    
+    // Update sun positions for engineering visualization
+    const sunsData = suns.getSuns();
+    if (sunsData && sunsData.length >= 2) {
+        ectoplasmMaterial.uniforms.uRedSunPos.value.copy(sunsData[0].position);
+        ectoplasmMaterial.uniforms.uBlueSunPos.value.copy(sunsData[1].position);
+    }
+    
+    // Make engineering intensity pulse slowly for living effect
+    ectoplasmMaterial.uniforms.uEngineeringIntensity.value = 
+        1.3 + Math.sin(clock.getElapsedTime() * 0.4) * 0.3;
     
     // Enhanced movement system - surface movement when close, orbital when far
     const surfaceThreshold = 8.0; // Distance threshold for switching movement modes
