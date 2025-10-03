@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import SolarisFog from './fog.js';
 import SolarisSimulacra from './simulacra.js';
 import { createSuns } from './suns.js';
+import SolarisStarfield from './starfield.js';
 
 //Scene
 const scene = new THREE.Scene();
@@ -9,6 +10,16 @@ const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.inner
 const fog = new SolarisFog(scene);
 const simulacra = new SolarisSimulacra(scene, 5);
 const suns = createSuns(scene);
+const starfield = new SolarisStarfield(scene, {
+    starCount: 1200,           // Increased for better coverage
+    minDistance: 30,            // Much closer - just beyond max camera distance
+    maxDistance: 100,           // Still far enough to feel like background
+    minBrightness: 0.5,         // Slightly brighter minimum
+    maxBrightness: 1.0,         // Full brightness for some stars
+    warmStarRatio: 0.3,
+    twinkleSpeed: 0.5,
+    baseOpacity: 0.8            // Increased opacity
+});
 
 // Connect fog to suns for dynamic color mixing
 fog.setSunData(suns.getSuns());
@@ -341,6 +352,7 @@ function animate () {
     fog.update(clock.getDelta());
     simulacra.update(deltaTime);
     suns.update(deltaTime);
+    starfield.update(deltaTime);
     
     // Update sun positions for engineering visualization
     const sunsData = suns.getSuns();
