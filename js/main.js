@@ -3,6 +3,7 @@ import SolarisFog from './fog.js';
 import SolarisSimulacra from './simulacra.js';
 import { createSuns } from './suns.js';
 import SolarisStarfield from './starfield.js';
+import { SolarisMist } from './mist.js';
 
 //Plasma Fountain Class
 class PlasmaFountain {
@@ -134,6 +135,10 @@ const starfield = new SolarisStarfield(scene, {
     twinkleSpeed: 0.5,
     baseOpacity: 0.8
 });
+
+const oceanRadius = 5;
+
+const mist = new SolarisMist(scene, oceanRadius);
 
 // Connect fog to suns for dynamic color mixing
 fog.setSunData(suns.getSuns());
@@ -641,6 +646,7 @@ function animate () {
     simulacra.update(deltaTime);
     suns.update(deltaTime);
     starfield.update(deltaTime);
+    mist.update(deltaTime); 
     updateObservation();
     updatePlasmaEruptions(deltaTime, elapsedTime);
     
