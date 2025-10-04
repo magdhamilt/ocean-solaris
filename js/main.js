@@ -80,7 +80,8 @@ const colorPalette = {
     oceanHighlight1: new THREE.Color(0xF2CC8F),
     oceanHighlight2: new THREE.Color(0xD9B3FF),
     accentRed: new THREE.Color(0xFF6B6B),
-    accentBlue: new THREE.Color(0x8EE3EF)
+    accentBlue: new THREE.Color(0x8EE3EF),
+    deepPurple: new THREE.Color(0x1a0d26)
 };
 
 //Shader Material with Dynamic Sun Influence and Engineering Visualization
@@ -93,9 +94,10 @@ const uniforms = {
     uBlueSunColor: { value: colorPalette.blueSun},
     uAccentRed: { value: colorPalette.accentRed},
     uAccentBlue: { value: colorPalette.accentBlue},
-    uMetalness: { value: 0.2},
+    uDeepPurple: { value: colorPalette.deepPurple},
+    uMetalness: { value: 0.3},
     uRoughness: { value: 0.35},
-    uOpacity: { value: 0.85},
+    uOpacity: { value: 0.95},
     uGlowIntensity: { value: 0.8},
     uFresnelPower: { value: 2.8},
     uEnvMap: { value: envMap },
@@ -103,6 +105,8 @@ const uniforms = {
     uBlueSunPos: { value: new THREE.Vector3(-12, 6, -8)},
     uEngineeringIntensity: { value: 1.5 },
     uEngineeringColor: { value: new THREE.Color(0xff9eb3) },
+    uDepthFalloff: { value: 0.3 },
+    uSubsurfaceStrength: { value: 0.5 }
 };
 
 const vertexShader = `
@@ -112,6 +116,7 @@ varying vec3 vViewDir;
 varying vec3 vPos;
 varying vec3 vWorldPos;
 varying vec2 vUv;
+varying float vDepth;
 
 float blobWave(vec3 pos, float speed, float freq, float amp){
     return sin(pos.x*freq + uTime*speed)* amp +
@@ -137,6 +142,9 @@ void main() {
     vWorldPos = worldPos.xyz;
     vViewDir = normalize((modelViewMatrix*vec4(pos, 1.0)).xyz);
     
+    // Calculate depth from center (for subsurface scattering)
+    vDepth = length(vWorldPos);
+    
     // Calculate UV coordinates for engineering patterns
     vUv = vec2(
         atan(pos.z, pos.x) / (2.0 * 3.14159) + 0.5,
@@ -156,6 +164,7 @@ uniform vec3 uRedSunColor;
 uniform vec3 uBlueSunColor;
 uniform vec3 uAccentRed;
 uniform vec3 uAccentBlue;
+uniform vec3 uDeepPurple;
 uniform float uMetalness;
 uniform float uRoughness;
 uniform float uOpacity;
@@ -166,12 +175,15 @@ uniform vec3 uRedSunPos;
 uniform vec3 uBlueSunPos;
 uniform float uEngineeringIntensity;
 uniform vec3 uEngineeringColor;
+uniform float uDepthFalloff;
+uniform float uSubsurfaceStrength;
 
 varying vec3 vNormal;
 varying vec3 vViewDir;
 varying vec3 vPos;
 varying vec3 vWorldPos;
 varying vec2 vUv;
+varying float vDepth;
 
 // Noise functions for organic engineering patterns
 float hash(vec2 p) {
@@ -277,7 +289,29 @@ void main() {
     float viscosityResistance = smoothstep(0.4, 0.7, viscosity);
     // === END VISCOSITY ===
     
-    // Depth-based color variation
+    // === DEPTH LAYERS & SUBSURFACE SCATTERING ===
+    // Calculate depth-based subsurface scattering
+    float depthAttenuation = exp(-vDepth * uDepthFalloff);
+    
+    // Create dynamic subsurface color with subtle variations
+    float subsurfaceNoise = fbm(vWorldPos.xy * 0.3 + uTime * 0.03);
+    vec3 subsurfaceColor = mix(
+        uDeepPurple,
+        mix(uOceanBase, uDeepPurple * 1.5, 0.6),
+        subsurfaceNoise * 0.3 + 0.5
+    );
+    
+    // Add depth-aware color variation with organic movement
+    float depthColorShift = sin(vDepth * 0.8 - uTime * 0.5) * 0.5 + 0.5;
+    subsurfaceColor = mix(subsurfaceColor, uOceanBase * 0.4, depthColorShift * depthAttenuation * 0.3);
+    
+    // Simulate light penetration through the gelatinous mass
+    float lightPenetration = exp(-vDepth * 0.3);
+    vec3 penetratedSunlight = (sunTint * 0.5 + vec3(0.2, 0.15, 0.25)) * lightPenetration;
+    subsurfaceColor += penetratedSunlight * 0.4;
+    // === END DEPTH LAYERS ===
+    
+    // Depth-based color variation (existing)
     float depthFactor = (vPos.y + 5.0) / 10.0;
     vec3 depthColor = mix(uOceanBase, uHighlight2, depthFactor * 0.3);
     
@@ -287,6 +321,9 @@ void main() {
     
     vec3 baseColor = mix(depthColor, iridescentColor, 0.15);
     baseColor = mix(baseColor, baseColor * (1.0 + sunTint), 0.6);
+    
+    // Blend in subsurface scattering for depth perception
+    baseColor = mix(subsurfaceColor, baseColor, uSubsurfaceStrength);
     
     // Blend in engineering activity - modulated by viscosity
     // More viscous areas show less engineering (they're "slower" to respond)
@@ -319,12 +356,16 @@ void main() {
     color += engineeringGlow * totalEngineering * 0.4;
     color += engineeringEdge * engineeringGlow * 0.3;
     
+    // Add subtle subsurface glow around edges
+    float subsurfaceGlow = fresnel * depthAttenuation * 0.3;
+    color += subsurfaceColor * subsurfaceGlow;
+    
     // Dynamic opacity based on viscosity
     // More viscous = more opaque (gel-like), less viscous = more transparent (liquid)
-    float dynamicOpacity = mix(0.7, 0.95, viscosity);
+    float dynamicOpacity = mix(0.88, 0.98, viscosity);
     
     // Areas with high engineering activity are slightly more visible
-    dynamicOpacity = mix(dynamicOpacity, min(dynamicOpacity * 1.15, 1.0), totalEngineering * 0.3);
+    dynamicOpacity = mix(dynamicOpacity, min(dynamicOpacity * 1.08, 1.0), totalEngineering * 0.3);
 
     gl_FragColor = vec4(color, dynamicOpacity);
 }
@@ -335,8 +376,9 @@ const ectoplasmMaterial = new THREE.ShaderMaterial({
     vertexShader,
     fragmentShader,
     transparent: true,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
+    blending: THREE.NormalBlending,
+    depthWrite: true,
+    side: THREE.DoubleSide
 });
 
 //Sphere for planet-scale ectoplasm
