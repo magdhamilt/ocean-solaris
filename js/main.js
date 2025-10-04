@@ -533,10 +533,28 @@ const ectoplasmMaterial = new THREE.ShaderMaterial({
     side: THREE.DoubleSide
 });
 
-//Sphere for planet-scale ectoplasm
-const geometry = new THREE.SphereGeometry(5, 64, 64);
-const planet = new THREE.Mesh(geometry, ectoplasmMaterial);
-scene.add(planet);
+//Sphere for planet-scale ectoplasm with LOD system
+const lod = new THREE.LOD();
+
+// High detail - when close
+const geometryHigh = new THREE.SphereGeometry(5, 128, 128);
+const planetHigh = new THREE.Mesh(geometryHigh, ectoplasmMaterial);
+lod.addLevel(planetHigh, 0);
+
+// Medium detail - mid distance
+const geometryMedium = new THREE.SphereGeometry(5, 64, 64);
+const planetMedium = new THREE.Mesh(geometryMedium, ectoplasmMaterial);
+lod.addLevel(planetMedium, 10);
+
+// Low detail - far away
+const geometryLow = new THREE.SphereGeometry(5, 32, 32);
+const planetLow = new THREE.Mesh(geometryLow, ectoplasmMaterial);
+lod.addLevel(planetLow, 20);
+
+scene.add(lod);
+
+// Keep reference to LOD for raycasting (use highest detail mesh)
+const planet = planetHigh;
 
 //Intelligent Observation System
 let observationIntensity = 0;
@@ -698,6 +716,9 @@ function animate () {
     } else {
         camera.lookAt(0, 0, 0);
     }
+    
+    // Update LOD based on camera distance
+    lod.update(camera);
     
     planet.rotation.y += 0.001;
     renderer.render(scene, camera);
