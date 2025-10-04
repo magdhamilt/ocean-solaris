@@ -106,7 +106,10 @@ const uniforms = {
     uEngineeringIntensity: { value: 1.5 },
     uEngineeringColor: { value: new THREE.Color(0xff9eb3) },
     uDepthFalloff: { value: 0.3 },
-    uSubsurfaceStrength: { value: 0.5 }
+    uSubsurfaceStrength: { value: 0.5 },
+    uObservationPoint: { value: new THREE.Vector3(0, 0, 0) },
+    uObservationIntensity: { value: 0.0 },
+    uObservationRadius: { value: 3.0 }
 };
 
 const vertexShader = `
@@ -177,6 +180,9 @@ uniform float uEngineeringIntensity;
 uniform vec3 uEngineeringColor;
 uniform float uDepthFalloff;
 uniform float uSubsurfaceStrength;
+uniform vec3 uObservationPoint;
+uniform float uObservationIntensity;
+uniform float uObservationRadius;
 
 varying vec3 vNormal;
 varying vec3 vViewDir;
@@ -275,6 +281,25 @@ void main() {
     totalEngineering += neuralPattern * totalEngineering * 0.3;
     // === END ENGINEERING ===
     
+    // === OBSERVATION RESPONSE ===
+    // Ocean "notices" when being observed and responds
+    float distToObservation = length(vWorldPos - uObservationPoint);
+    float observationResponse = smoothstep(uObservationRadius, 0.0, distToObservation);
+    observationResponse *= uObservationIntensity;
+    
+    // Create rippling awareness pattern
+    float awarenessRipple = sin(distToObservation * 2.0 - uTime * 3.0) * 0.5 + 0.5;
+    awarenessRipple *= observationResponse;
+    
+    // Pulsing consciousness at observation point
+    float consciousnessPulse = sin(uTime * 4.0) * 0.5 + 0.5;
+    float awareness = observationResponse * (0.6 + consciousnessPulse * 0.4);
+    
+    // Organic spreading pattern from observation point
+    float spreadPattern = fbm(vUv * 6.0 + vec2(distToObservation * 0.5 - uTime * 0.3));
+    awareness += spreadPattern * observationResponse * 0.3;
+    // === END OBSERVATION ===
+    
     // === VISCOSITY VARIATIONS ===
     // Different areas have different viscosities - more liquid vs more gel-like
     float viscosity = mix(0.3, 0.9, 
@@ -330,6 +355,12 @@ void main() {
     float engineeringVisibility = totalEngineering * mix(0.9, 0.4, viscosity);
     baseColor = mix(baseColor, engineeringGlow, engineeringVisibility * 0.7);
     
+    // Add observation response - the ocean becomes more luminous where observed
+    vec3 awarenessColor = mix(uHighlight1, uHighlight2, consciousnessPulse);
+    awarenessColor = mix(awarenessColor, uEngineeringColor, 0.4);
+    baseColor = mix(baseColor, awarenessColor, awareness * 0.5);
+    baseColor += awarenessColor * awarenessRipple * 0.3;
+    
     // Fresnel effect - stronger in less viscous (more liquid) areas
     float fresnelPower = mix(uFresnelPower, uFresnelPower * 1.5, 1.0 - viscosity);
     float fresnel = pow(1.0 - dot(norm, normalize(vViewDir)), fresnelPower);
@@ -356,6 +387,10 @@ void main() {
     color += engineeringGlow * totalEngineering * 0.4;
     color += engineeringEdge * engineeringGlow * 0.3;
     
+    // Add observation glow - makes the observed area more vibrant
+    color += awarenessColor * awareness * 0.6;
+    color += awarenessRipple * awarenessColor * observationResponse * 0.4;
+    
     // Add subtle subsurface glow around edges
     float subsurfaceGlow = fresnel * depthAttenuation * 0.3;
     color += subsurfaceColor * subsurfaceGlow;
@@ -366,6 +401,9 @@ void main() {
     
     // Areas with high engineering activity are slightly more visible
     dynamicOpacity = mix(dynamicOpacity, min(dynamicOpacity * 1.08, 1.0), totalEngineering * 0.3);
+    
+    // Observed areas become slightly more defined/solid
+    dynamicOpacity = mix(dynamicOpacity, min(dynamicOpacity * 1.05, 1.0), awareness * 0.4);
 
     gl_FragColor = vec4(color, dynamicOpacity);
 }
@@ -385,6 +423,30 @@ const ectoplasmMaterial = new THREE.ShaderMaterial({
 const geometry = new THREE.SphereGeometry(5, 64, 64);
 const planet = new THREE.Mesh(geometry, ectoplasmMaterial);
 scene.add(planet);
+
+//Intelligent Observation System
+let observationIntensity = 0;
+const raycast = new THREE.Raycaster();
+
+function updateObservation() {
+    // Cast ray from center of screen (where camera is looking)
+    raycast.setFromCamera(new THREE.Vector2(0, 0), camera);
+    const intersects = raycast.intersectObject(planet);
+    
+    if (intersects.length > 0) {
+        const point = intersects[0].point;
+        // Ocean "notices" being observed
+        observationIntensity = Math.min(1.0, observationIntensity + 0.01);
+        
+        // Update shader uniform for localized response
+        ectoplasmMaterial.uniforms.uObservationPoint.value.copy(point);
+        ectoplasmMaterial.uniforms.uObservationIntensity.value = observationIntensity;
+    } else {
+        // Fade when not directly observed
+        observationIntensity *= 0.99;
+        ectoplasmMaterial.uniforms.uObservationIntensity.value = observationIntensity;
+    }
+}
 
 //Animate
 const clock = new THREE.Clock();
