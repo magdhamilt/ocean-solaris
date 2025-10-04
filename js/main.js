@@ -11,21 +11,21 @@ const fog = new SolarisFog(scene);
 const simulacra = new SolarisSimulacra(scene, 5);
 const suns = createSuns(scene);
 const starfield = new SolarisStarfield(scene, {
-    starCount: 1200,           // Increased for better coverage
-    minDistance: 30,            // Much closer - just beyond max camera distance
-    maxDistance: 100,           // Still far enough to feel like background
-    minBrightness: 0.5,         // Slightly brighter minimum
-    maxBrightness: 1.0,         // Full brightness for some stars
+    starCount: 1200,
+    minDistance: 30,
+    maxDistance: 100,
+    minBrightness: 0.5,
+    maxBrightness: 1.0,
     warmStarRatio: 0.3,
     twinkleSpeed: 0.5,
-    baseOpacity: 0.8            // Increased opacity
+    baseOpacity: 0.8
 });
 
 // Connect fog to suns for dynamic color mixing
 fog.setSunData(suns.getSuns());
 
 //Camera - positioned on the surface        
-camera.position.set(0, 5.1, 0); // Just above the surface (radius is 5)
+camera.position.set(0, 5.1, 0);
 
 //Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true});
@@ -35,25 +35,24 @@ document.body.appendChild(renderer.domElement);
 //Enhanced camera controls with zoom
 let cameraAngleY = 0;
 let cameraAngleX = 0;
-let cameraDistance = 5.2; // Start just above surface
+let cameraDistance = 5.2;
 let moveSpeed = 0.01;
 let zoomSpeed = 0.1;
-const minDistance = 5.1; // Just above surface
-const maxDistance = 25.0; // Far enough to see whole planet
+const minDistance = 5.1;
+const maxDistance = 25.0;
 
 const keys = {};
 document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
 document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
 
 document.addEventListener('mousemove', (event) => {
-    if (event.buttons === 1) { // Left mouse button held
+    if (event.buttons === 1) {
         cameraAngleY -= event.movementX * 0.005;
         cameraAngleX -= event.movementY * 0.005;
         cameraAngleX = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraAngleX));
     }
 });
 
-// Mouse wheel for zooming
 document.addEventListener('wheel', (event) => {
     event.preventDefault();
     cameraDistance += event.deltaY * 0.01;
@@ -102,9 +101,8 @@ const uniforms = {
     uEnvMap: { value: envMap },
     uRedSunPos: { value: new THREE.Vector3(15, 8, 5)},
     uBlueSunPos: { value: new THREE.Vector3(-12, 6, -8)},
-    // Engineering visualization controls
-    uEngineeringIntensity: { value: 1.5 }, // Overall engineering activity level
-    uEngineeringColor: { value: new THREE.Color(0xff9eb3) }, // Pinkish engineering glow
+    uEngineeringIntensity: { value: 1.5 },
+    uEngineeringColor: { value: new THREE.Color(0xff9eb3) },
 };
 
 const vertexShader = `
@@ -207,28 +205,22 @@ float calculateEngineeringZone(vec3 sunPos, vec3 sunColor, int sunIndex) {
     vec3 normalizedPos = normalize(vWorldPos);
     vec3 toSun = normalize(sunPos - vWorldPos);
     
-    // Zone facing the sun - the ocean "knows" where the sun is
     float sunAlignment = max(0.0, dot(normalizedPos, toSun));
     float zoneIntensity = pow(sunAlignment, 2.0);
     
-    // Organic pulsing patterns - like the ocean is breathing
     vec2 pulseCoord = vUv * 4.0 + uTime * 0.08 * float(sunIndex + 1);
     float pulse = fbm(pulseCoord);
     pulse = sin(pulse * 6.28 + uTime * 1.5) * 0.5 + 0.5;
     
-    // Distance-based waves - "pushing back" against the sun
     float distance = length(vWorldPos - sunPos);
     float wave = sin(distance * 0.4 - uTime * 2.5 + float(sunIndex) * 3.14159) * 0.5 + 0.5;
     
-    // Create interference patterns where engineering is most active
     float interference = sin(sunAlignment * 15.0 - uTime * 1.8) * 0.5 + 0.5;
     interference = smoothstep(0.4, 0.6, interference);
     
-    // Combine effects
     float activity = zoneIntensity * pulse * wave;
     activity = smoothstep(0.25, 0.85, activity);
     
-    // Add sharp "organizing" rings - planetary-scale structures
     float rings = sin(sunAlignment * 25.0 - uTime * 1.2) * 0.5 + 0.5;
     activity += rings * zoneIntensity * interference * 0.4;
     
@@ -238,47 +230,54 @@ float calculateEngineeringZone(vec3 sunPos, vec3 sunColor, int sunIndex) {
 void main() {
     vec3 norm = normalize(vNormal);
     
-    // Calculate sun influences based on distance and angle
+    // Calculate sun influences
     vec3 toRedSun = normalize(uRedSunPos - vWorldPos);
     vec3 toBlueSun = normalize(uBlueSunPos - vWorldPos);
     
     float redSunInfluence = max(0.0, dot(norm, toRedSun)) * 0.4;
     float blueSunInfluence = max(0.0, dot(norm, toBlueSun)) * 0.4;
     
-    // Distance-based falloff for more realistic lighting
     float redDist = length(uRedSunPos - vWorldPos);
     float blueDist = length(uBlueSunPos - vWorldPos);
     redSunInfluence *= 1.0 / (1.0 + redDist * 0.02);
     blueSunInfluence *= 1.0 / (1.0 + blueDist * 0.02);
     
-    // Dynamic color mixing based on sun positions
     vec3 sunTint = uRedSunColor * redSunInfluence + uBlueSunColor * blueSunInfluence;
     
     // === ENGINEERING VISUALIZATION ===
-    // Calculate engineering activity for each sun
     float redEngineering = calculateEngineeringZone(uRedSunPos, uRedSunColor, 0);
     float blueEngineering = calculateEngineeringZone(uBlueSunPos, uBlueSunColor, 1);
     
-    // Total engineering activity
     float totalEngineering = (redEngineering + blueEngineering) * uEngineeringIntensity;
     
-    // Create colored engineering zones - red sun creates warmer zones, blue sun cooler
     vec3 redZoneColor = mix(uEngineeringColor, uRedSunColor, 0.3);
     vec3 blueZoneColor = mix(uEngineeringColor, uBlueSunColor, 0.3);
     vec3 engineeringGlow = redZoneColor * redEngineering + blueZoneColor * blueEngineering;
     
-    // Edge enhancement - boundaries between zones are most active
     float engineeringEdge = length(fwidth(totalEngineering)) * 60.0;
     totalEngineering += engineeringEdge * 0.6;
     totalEngineering = clamp(totalEngineering, 0.0, 1.0);
     
-    // Create "neural network" patterns in highly active areas
     float neuralPattern = fbm(vUv * 8.0 + uTime * 0.05);
     neuralPattern = smoothstep(0.45, 0.55, neuralPattern);
     totalEngineering += neuralPattern * totalEngineering * 0.3;
     // === END ENGINEERING ===
     
-    // Depth-based color variation (gelatinous effect)
+    // === VISCOSITY VARIATIONS ===
+    // Different areas have different viscosities - more liquid vs more gel-like
+    float viscosity = mix(0.3, 0.9, 
+        fbm(vWorldPos.xy * 0.1 + uTime * 0.02));
+    
+    // Add slower, larger-scale viscosity zones
+    float largeViscosityZones = fbm(vWorldPos.xz * 0.05 + uTime * 0.01);
+    viscosity = mix(viscosity, largeViscosityZones, 0.4);
+    
+    // Viscosity affects how the ocean responds to engineering activity
+    // More viscous = more resistant = less visible engineering patterns
+    float viscosityResistance = smoothstep(0.4, 0.7, viscosity);
+    // === END VISCOSITY ===
+    
+    // Depth-based color variation
     float depthFactor = (vPos.y + 5.0) / 10.0;
     vec3 depthColor = mix(uOceanBase, uHighlight2, depthFactor * 0.3);
     
@@ -286,43 +285,48 @@ void main() {
     float iridescence = sin(vPos.x * 3.0 + vPos.y * 2.0 + vPos.z * 4.0 + uTime * 2.0) * 0.5 + 0.5;
     vec3 iridescentColor = mix(uHighlight1, uHighlight2, iridescence);
     
-    // Base ocean color with depth and iridescence
     vec3 baseColor = mix(depthColor, iridescentColor, 0.15);
-    
-    // Add sun tinting
     baseColor = mix(baseColor, baseColor * (1.0 + sunTint), 0.6);
     
-    // Blend in engineering activity - the ocean glows where it's "working"
-    baseColor = mix(baseColor, engineeringGlow, totalEngineering * 0.7);
+    // Blend in engineering activity - modulated by viscosity
+    // More viscous areas show less engineering (they're "slower" to respond)
+    float engineeringVisibility = totalEngineering * mix(0.9, 0.4, viscosity);
+    baseColor = mix(baseColor, engineeringGlow, engineeringVisibility * 0.7);
     
-    // Fresnel effect for gelatinous look
-    float fresnel = pow(1.0 - dot(norm, normalize(vViewDir)), uFresnelPower);
+    // Fresnel effect - stronger in less viscous (more liquid) areas
+    float fresnelPower = mix(uFresnelPower, uFresnelPower * 1.5, 1.0 - viscosity);
+    float fresnel = pow(1.0 - dot(norm, normalize(vViewDir)), fresnelPower);
     
-    // Environment reflection with color tinting
+    // Environment reflection - varies with viscosity
+    // More viscous = less reflective (more opaque/matte)
     vec3 reflected = reflect(-vViewDir, norm);
     vec3 envColor = textureCube(uEnvMap, reflected).rgb;
     vec3 tintedEnv = envColor * mix(uOceanBase, vec3(1.0), 0.5);
     
+    // Metalness and roughness vary with viscosity
+    float effectiveMetalness = uMetalness * mix(1.2, 0.4, viscosity);
+    float effectiveRoughness = mix(0.2, 0.6, 1.0 - viscosity);
+    
     // Combine base color with metallic reflection
-    vec3 color = mix(baseColor, tintedEnv, uMetalness * 0.8);
+    vec3 color = mix(baseColor, tintedEnv, effectiveMetalness * 0.8);
     
     // Pulsing glow with accent colors
     float pulse = 0.5 + 0.5 * sin(vPos.x*2.0 + vPos.y*2.0 + vPos.z*2.0 + uTime*3.0);
     vec3 glowColor = mix(uAccentRed, uAccentBlue, sin(uTime * 0.5) * 0.5 + 0.5);
     
-    // Add subtle glow with fresnel
     color += fresnel * glowColor * uGlowIntensity * pulse * 0.4;
-    
-    // Add sun-colored highlights at edges
     color += fresnel * sunTint * 0.5;
-    
-    // Engineering zones add extra brightness - the ocean is "energized"
     color += engineeringGlow * totalEngineering * 0.4;
-    
-    // Add engineering edge glow for extra detail
     color += engineeringEdge * engineeringGlow * 0.3;
+    
+    // Dynamic opacity based on viscosity
+    // More viscous = more opaque (gel-like), less viscous = more transparent (liquid)
+    float dynamicOpacity = mix(0.7, 0.95, viscosity);
+    
+    // Areas with high engineering activity are slightly more visible
+    dynamicOpacity = mix(dynamicOpacity, min(dynamicOpacity * 1.15, 1.0), totalEngineering * 0.3);
 
-    gl_FragColor = vec4(color, uOpacity);
+    gl_FragColor = vec4(color, dynamicOpacity);
 }
 `;
 
@@ -365,12 +369,11 @@ function animate () {
     ectoplasmMaterial.uniforms.uEngineeringIntensity.value = 
         1.3 + Math.sin(clock.getElapsedTime() * 0.4) * 0.3;
     
-    // Enhanced movement system - surface movement when close, orbital when far
-    const surfaceThreshold = 8.0; // Distance threshold for switching movement modes
+    // Enhanced movement system
+    const surfaceThreshold = 8.0;
     const isSurfaceMode = cameraDistance < surfaceThreshold;
     
     if (isSurfaceMode) {
-        // Surface exploration movement (original behavior)
         if (keys['w'] || keys['arrowup']) {
             camera.position.x += Math.sin(cameraAngleY) * moveSpeed;
             camera.position.z += Math.cos(cameraAngleY) * moveSpeed;
@@ -388,11 +391,9 @@ function animate () {
             camera.position.z += Math.sin(cameraAngleY) * moveSpeed;
         }
         
-        // Keep camera on planet surface with current distance
         const normalizedPos = new THREE.Vector3(camera.position.x, camera.position.y, camera.position.z).normalize();
         camera.position.copy(normalizedPos.multiplyScalar(cameraDistance));
     } else {
-        // Orbital movement when zoomed out
         if (keys['w'] || keys['arrowup']) cameraAngleX -= 0.02;
         if (keys['s'] || keys['arrowdown']) cameraAngleX += 0.02;
         if (keys['a'] || keys['arrowleft']) cameraAngleY -= 0.02;
@@ -400,25 +401,21 @@ function animate () {
         
         cameraAngleX = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraAngleX));
         
-        // Position camera in orbit around planet
         camera.position.x = Math.cos(cameraAngleX) * Math.sin(cameraAngleY) * cameraDistance;
         camera.position.y = Math.sin(cameraAngleX) * cameraDistance;
         camera.position.z = Math.cos(cameraAngleX) * Math.cos(cameraAngleY) * cameraDistance;
     }
     
-    // Zoom controls with keyboard
-    if (keys['q'] || keys[' ']) { // Q or Space to zoom out
+    if (keys['q'] || keys[' ']) {
         cameraDistance += zoomSpeed;
         cameraDistance = Math.min(cameraDistance, maxDistance);
     }
-    if (keys['e'] || keys['shift']) { // E or Shift to zoom in
+    if (keys['e'] || keys['shift']) {
         cameraDistance -= zoomSpeed;
         cameraDistance = Math.max(cameraDistance, minDistance);
     }
     
-    // Camera look direction - different behavior for surface vs orbital mode
     if (isSurfaceMode) {
-        // Surface mode: look along the surface
         const lookDirection = new THREE.Vector3(
             Math.sin(cameraAngleY) * Math.cos(cameraAngleX),
             Math.sin(cameraAngleX),
@@ -431,11 +428,10 @@ function animate () {
             camera.position.z + lookDirection.z
         );
     } else {
-        // Orbital mode: always look at planet center
         camera.lookAt(0, 0, 0);
     }
     
-    planet.rotation.y += 0.001; //slow planet spin
+    planet.rotation.y += 0.001;
     renderer.render(scene, camera);
 }
 
