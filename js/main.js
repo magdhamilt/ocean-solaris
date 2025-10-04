@@ -4,6 +4,120 @@ import SolarisSimulacra from './simulacra.js';
 import { createSuns } from './suns.js';
 import SolarisStarfield from './starfield.js';
 
+//Plasma Fountain Class
+class PlasmaFountain {
+    constructor(scene, position) {
+        this.scene = scene;
+        this.lifetime = 3.0 + Math.random() * 2.0; // 3-5 seconds
+        this.maxLifetime = this.lifetime;
+        
+        // Create animated plasma jet geometry
+        this.geometry = new THREE.ConeGeometry(0.3, 2, 8);
+        
+        // Custom plasma shader with flow animation
+        this.material = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uLifetime: { value: 1.0 },
+                uColor1: { value: new THREE.Color(0xFF6B6B) },
+                uColor2: { value: new THREE.Color(0xF2CC8F) },
+                uColor3: { value: new THREE.Color(0x8EE3EF) }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                varying float vHeight;
+                void main() {
+                    vUv = uv;
+                    vHeight = position.y;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float uTime;
+                uniform float uLifetime;
+                uniform vec3 uColor1;
+                uniform vec3 uColor2;
+                uniform vec3 uColor3;
+                varying vec2 vUv;
+                varying float vHeight;
+                
+                float hash(vec2 p) {
+                    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+                }
+                
+                float noise(vec2 p) {
+                    vec2 i = floor(p);
+                    vec2 f = fract(p);
+                    f = f * f * (3.0 - 2.0 * f);
+                    float a = hash(i);
+                    float b = hash(i + vec2(1.0, 0.0));
+                    float c = hash(i + vec2(0.0, 1.0));
+                    float d = hash(i + vec2(1.0, 1.0));
+                    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+                }
+                
+                void main() {
+                    // Flowing plasma effect
+                    float flow = noise(vec2(vUv.x * 3.0, vUv.y * 2.0 - uTime * 2.0));
+                    flow += noise(vec2(vUv.x * 6.0, vUv.y * 4.0 - uTime * 3.0)) * 0.5;
+                    
+                    // Height-based color gradient
+                    vec3 color = mix(uColor1, uColor2, vHeight * 0.5 + 0.5);
+                    color = mix(color, uColor3, flow);
+                    
+                    // Turbulent edges
+                    float edge = smoothstep(0.0, 0.3, vUv.x) * smoothstep(1.0, 0.7, vUv.x);
+                    
+                    // Fade based on lifetime and height
+                    float opacity = uLifetime * edge * (1.0 - vHeight * 0.3);
+                    opacity *= (0.5 + flow * 0.5);
+                    
+                    gl_FragColor = vec4(color, opacity);
+                }
+            `,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        
+        this.mesh = new THREE.Mesh(this.geometry, this.material);
+        this.mesh.position.copy(position);
+        
+        // Random rotation for variety
+        this.mesh.rotation.z = Math.random() * Math.PI * 2;
+        
+        scene.add(this.mesh);
+    }
+    
+    update(deltaTime, time) {
+        this.lifetime -= deltaTime;
+        
+        // Update shader time
+        this.material.uniforms.uTime.value = time;
+        this.material.uniforms.uLifetime.value = this.lifetime / this.maxLifetime;
+        
+        // Pulsing height animation
+        const pulsePhase = (1.0 - this.lifetime / this.maxLifetime);
+        this.mesh.scale.y = Math.sin(pulsePhase * Math.PI) * (1.5 + Math.sin(time * 3.0) * 0.5);
+        
+        // Slight swaying motion
+        this.mesh.rotation.x = Math.sin(time * 2.0) * 0.2;
+        
+        // Eruption grows then shrinks
+        const scalePhase = Math.sin(pulsePhase * Math.PI);
+        this.mesh.scale.x = scalePhase * 0.8;
+        this.mesh.scale.z = scalePhase * 0.8;
+        
+        return this.lifetime > 0;
+    }
+    
+    destroy() {
+        this.scene.remove(this.mesh);
+        this.geometry.dispose();
+        this.material.dispose();
+    }
+}
+
 //Scene
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -448,19 +562,69 @@ function updateObservation() {
     }
 }
 
+//Plasma Eruption System
+const plasmaFountains = [];
+let timeSinceLastEruption = 0;
+const eruptionInterval = 4.0; // Average seconds between eruptions
+const eruptionVariation = 3.0; // Random variation
+
+function createPlasmaEruption() {
+    // Random position on sphere surface
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    const radius = 5.1; // Just above ocean surface
+    
+    const position = new THREE.Vector3(
+        radius * Math.sin(phi) * Math.cos(theta),
+        radius * Math.sin(phi) * Math.sin(theta),
+        radius * Math.cos(phi)
+    );
+    
+    // Orient fountain outward from planet center
+    const fountain = new PlasmaFountain(scene, position);
+    const outwardDir = position.clone().normalize();
+    fountain.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), outwardDir);
+    
+    plasmaFountains.push(fountain);
+}
+
+function updatePlasmaEruptions(deltaTime, time) {
+    // Update existing fountains
+    for (let i = plasmaFountains.length - 1; i >= 0; i--) {
+        const fountain = plasmaFountains[i];
+        if (!fountain.update(deltaTime, time)) {
+            // Remove expired fountain
+            fountain.destroy();
+            plasmaFountains.splice(i, 1);
+        }
+    }
+    
+    // Spawn new eruptions occasionally
+    timeSinceLastEruption += deltaTime;
+    const nextEruptionTime = eruptionInterval + (Math.random() - 0.5) * eruptionVariation;
+    
+    if (timeSinceLastEruption >= nextEruptionTime) {
+        createPlasmaEruption();
+        timeSinceLastEruption = 0;
+    }
+}
+
 //Animate
 const clock = new THREE.Clock();
 
 function animate () {
     requestAnimationFrame(animate);
     const deltaTime = clock.getDelta();
+    const elapsedTime = clock.getElapsedTime();
 
-    ectoplasmMaterial.uniforms.uTime.value = clock.getElapsedTime();
+    ectoplasmMaterial.uniforms.uTime.value = elapsedTime;
 
-    fog.update(clock.getDelta());
+    fog.update(deltaTime);
     simulacra.update(deltaTime);
     suns.update(deltaTime);
     starfield.update(deltaTime);
+    updateObservation();
+    updatePlasmaEruptions(deltaTime, elapsedTime);
     
     // Update sun positions for engineering visualization
     const sunsData = suns.getSuns();
