@@ -20,6 +20,7 @@ Demo available [here](https://magdhamilt.github.io/ocean-solaris/).
 - **Atmospheric Rendering**: Ethereal lighting and fog effects to capture Solaris's alien atmosphere.
 - **Responsive Design**: Adapts to different screen sizes and devices.
 - **Optimized Performance**: Smooth 60fps animation with efficient WebGL rendering. 
+- **Dual Solar System**
 
 ## Camera Controls
 
