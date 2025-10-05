@@ -45,20 +45,25 @@ This project aims to bring to life the mysterious, ever-changing alien entity fr
 
 ## Technical Details
 
-Technical Details
-Architecture
+### Architecture
+
 The simulation uses a custom WebGL shader system built with Three.js to create a living, gelatinous ocean that responds to observation and gravitational forces.
-Core Ocean Rendering
-Custom Shader Material: The ocean uses vertex and fragment shaders to achieve its unique gelatinous appearance and behavior.
 
-Vertex Shader: Implements multi-layered wave displacement using custom blobWave functions that combine sinusoidal motion at different frequencies (3.0, 5.0, 7.0 Hz) and speeds to create organic, planetary-scale undulation. Subtle pulse effects add breathing-like motion to the surface.
-Fragment Shader: Creates the translucent, semi-gelatinous appearance through:
+**Core Ocean Rendering**
 
-Subsurface Scattering: Depth-based light penetration simulation with exponential attenuation
-Dynamic Viscosity: Fractal Brownian Motion (FBM) generates varying viscosity zones that affect transparency, reflectivity, and response to engineering activity
-Fresnel Effects: Edge-based glow that varies with viscosity (more liquid = stronger fresnel)
-Environmental Reflections: Cube map reflections modulated by metalness and roughness parameters
+**Custom Shader Material**: The ocean uses vertex and fragment shaders to achieve its unique gelatinous appearance and behavior.
 
+**Vertex Shader**: Implements multi-layered wave displacement using custom blobWave functions that combine sinusoidal motion at different frequencies (3.0, 5.0, 7.0 Hz) and speeds to create organic, planetary-scale undulation. Subtle pulse effects add breathing-like motion to the surface.
+
+**Fragment Shader**: Creates the translucent, semi-gelatinous appearance through:
+
+**Subsurface Scattering**: Depth-based light penetration simulation with exponential attenuation
+
+**Dynamic Viscosity**: Fractal Brownian Motion (FBM) generates varying viscosity zones that affect transparency, reflectivity, and response to engineering activity
+
+**Fresnel Effects**: Edge-based glow that varies with viscosity (more liquid = stronger fresnel)
+
+**Environmental Reflections**: Cube map reflections modulated by metalness and roughness parameters
 
 
 Procedural Noise Systems
@@ -68,6 +73,7 @@ Fractal Brownian Motion (FBM): Multi-octave noise (4 iterations) creates complex
 Simplex Noise: Used in atmospheric effects (mist, starfield) for smooth, continuous movement
 
 Intelligent Systems
+
 Observation Response System:
 
 Raycasting detects where the camera looks at the ocean surface
@@ -113,7 +119,7 @@ Time-based lifecycle management (3-5 second duration)
 Additive blending for energy-like appearance
 Dynamic color gradients (red → yellow → cyan)
 
-Technical Stack
+### Technical Stack
 
 Three.js r128: Core rendering engine
 WebGL Shaders: GLSL vertex and fragment shaders for all major effects
