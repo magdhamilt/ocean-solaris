@@ -2,17 +2,21 @@
 
 A simulation of a gelatinous, shape-shifting ocean inspired by Stanislaw Lem’s Solaris, created using Three.js.
 
-This project aims to bring to life the mysterious, ever-changing alien entity from the classic sci-fi novel, featuring dynamic morphing, ethereal movements, and hypnotic visual patterns. 
-
 ![Screenshot of Ocean Solaris](https://github.com/magdhamilt/ocean-solaris/blob/master/screenshots/solaris1.jpg)
 
 Demo available [here](https://magdhamilt.github.io/ocean-solaris/).
 
 ## Table of Contents
+- [Description](#description)
 - [Features](#features)
 - [Camera Controls](#camera-controls)
 - [Technical Details](#technical-details)
+- [Screenshots](#screenshots)
 - [Links](#links)
+
+## Description
+
+This project aims to bring to life the mysterious, ever-changing alien entity from the classic sci-fi novel, featuring dynamic morphing, ethereal movements, and hypnotic visual patterns. 
 
 ## Features
 
@@ -53,6 +57,8 @@ The simulation uses a custom WebGL shader system for realistic ocean rendering:
 - **Fragment Shader**: Creates the gelatinous, semi-translucent appearance.
 - **Perlin Noise**: Generates organic movement patterns.
 - **Simplex Noise**: Creates spontaneous formation structures. 
+
+## Screenshots
 
 ## Links
 
