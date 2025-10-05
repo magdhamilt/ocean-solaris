@@ -20,27 +20,23 @@ This project aims to bring to life the mysterious, ever-changing alien entity fr
 
 ## Features
 
-- **Dynamic Ocean Simulation**: Continuously morphing gelatinous surface with realistic undulation.
-- **Shape-shifting Simulacra**: Spontaneous generation of abstract structures and patterns.
-- **Interactive Camera Controls**: Exploration of the ocean from multiple perspectives.
-- **Atmospheric Rendering**: Ethereal lighting and fog effects to capture Solaris's alien atmosphere.
-- **Responsive Design**: Adapts to different screen sizes and devices.
-- **Optimized Performance**: Smooth 60fps animation with efficient WebGL rendering. 
-- **Dual Solar System**
+- **Living Ocean**: Continuously morphing gelatinous surface that responds to observation
+- **Gravitational Stabilization**: Dual-sun system where the ocean actively counteracts orbital chaos
+- **Emergent Formations**: Five types of spontaneous structures (Symmetriads, Asymmetriads, Mimoids, Vertebrids, Extensors)
+- **Plasma Eruptions**: Periodic energy fountains across the surface
+- **Atmospheric Effects**: Dynamic fog, mist, bioluminescence, and realistic starfield
+- **Intelligent Response**: Ocean "notices" and reacts when observed
+- **Dual Camera Modes**: Surface walking and orbital flight
 
 ## Camera Controls
 
 **Movement:**
 - **WASD/Arrow Keys**: Move around
-  - **When close**: Walk on surface
-  - **When far**: Orbit around planet
+  - **When close** (< 8 units): Walk on surface
+  - **When far** (> 8 units): Orbit around planet
 
-**Look Around:**
+**View:**
 - **Mouse drag**: Look around
-- **I**: Look up
-- **K**: Look down
-- **J**: Look left
-- **L**: Look right
 
 **Zoom:**
 - **Mouse wheel**: Zoom in/out
@@ -49,14 +45,90 @@ This project aims to bring to life the mysterious, ever-changing alien entity fr
 
 ## Technical Details
 
-### Architecture
+Technical Details
+Architecture
+The simulation uses a custom WebGL shader system built with Three.js to create a living, gelatinous ocean that responds to observation and gravitational forces.
+Core Ocean Rendering
+Custom Shader Material: The ocean uses vertex and fragment shaders to achieve its unique gelatinous appearance and behavior.
 
-The simulation uses a custom WebGL shader system for realistic ocean rendering:
+Vertex Shader: Implements multi-layered wave displacement using custom blobWave functions that combine sinusoidal motion at different frequencies (3.0, 5.0, 7.0 Hz) and speeds to create organic, planetary-scale undulation. Subtle pulse effects add breathing-like motion to the surface.
+Fragment Shader: Creates the translucent, semi-gelatinous appearance through:
 
-- **Vertex Shader**: Handles wave displacement and morphing animations. 
-- **Fragment Shader**: Creates the gelatinous, semi-translucent appearance.
-- **Perlin Noise**: Generates organic movement patterns.
-- **Simplex Noise**: Creates spontaneous formation structures. 
+Subsurface Scattering: Depth-based light penetration simulation with exponential attenuation
+Dynamic Viscosity: Fractal Brownian Motion (FBM) generates varying viscosity zones that affect transparency, reflectivity, and response to engineering activity
+Fresnel Effects: Edge-based glow that varies with viscosity (more liquid = stronger fresnel)
+Environmental Reflections: Cube map reflections modulated by metalness and roughness parameters
+
+
+
+Procedural Noise Systems
+
+Hash-based Noise: Custom 2D noise functions in fragment shaders for organic patterns and engineering visualizations
+Fractal Brownian Motion (FBM): Multi-octave noise (4 iterations) creates complex, natural-looking variations in viscosity, subsurface color, and neural patterns
+Simplex Noise: Used in atmospheric effects (mist, starfield) for smooth, continuous movement
+
+Intelligent Systems
+Observation Response System:
+
+Raycasting detects where the camera looks at the ocean surface
+Shader uniforms create localized "awareness" that spreads from observation points
+Rippling patterns and increased luminosity simulate the ocean "noticing" being observed
+Smooth fade-in/fade-out creates organic response behavior
+
+Gravitational Engineering Visualization:
+
+Calculates sun alignment and distance to create dynamic "engineering zones"
+FBM-based pulse patterns with wave interference simulate the ocean's work stabilizing orbital mechanics
+The ocean counteracts 95% of gravitational chaos, leaving 5% visible as surface shimmer
+Dual-sun system creates overlapping engineering patterns with distinct color signatures
+
+Performance Optimizations
+
+LOD System: Three levels of detail (128, 64, 32 segments) automatically switch based on camera distance
+Instanced Geometries: Plasma fountains and formations use efficient geometry reuse
+Selective Rendering: Depth writing and blending modes optimized per-layer
+Shader Complexity Management: Critical calculations cached in varyings to minimize fragment shader load
+
+Atmospheric & Environmental Effects
+Multi-layered Atmosphere:
+
+Fog System (fog.js): Dynamic exponential fog with sun-responsive color mixing
+Mist Layers (mist.js): Shader-based surface mist with Simplex noise distortion
+Starfield (starfield.js): Three depth layers with realistic stellar classification (O, B, A, F, G, K, M types)
+Bioluminescence (bioluminescence.js): Internal light orbs with pulsing shaders and electric discharge effects
+
+Emergent Formations (simulacra.js):
+
+Five distinct formation types (Symmetriad, Asymmetriad, Mimoid, Vertebrid, Extensor)
+Lifecycle system with emergence, maturation, and dissolution phases
+Shader-based translucency with flowing internal patterns using 3D noise functions
+Weighted spawn system for varied appearance frequency
+
+Plasma Eruption System
+Real-time procedural plasma fountains with:
+
+Cone geometry with custom flow shaders
+Hash-based noise for turbulent effects
+Time-based lifecycle management (3-5 second duration)
+Additive blending for energy-like appearance
+Dynamic color gradients (red → yellow → cyan)
+
+Technical Stack
+
+Three.js r128: Core rendering engine
+WebGL Shaders: GLSL vertex and fragment shaders for all major effects
+Custom Noise Functions: Hash-based, Simplex, and FBM implementations
+Raycasting: For intelligent observation detection
+Dynamic Uniforms: Real-time shader parameter updates for animation
+
+Controls & Camera System
+Dual-mode camera system:
+
+Surface Mode (< 8.0 units): WASD movement along sphere surface with look direction
+Orbit Mode (> 8.0 units): Traditional orbital camera controls
+Mouse drag for rotation, wheel for zoom
+Smooth transitions between modes
+
 
 ## Screenshots
 
