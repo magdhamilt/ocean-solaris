@@ -138,8 +138,11 @@ Smooth transitions between modes
 
 ## Screenshots
 
-![Screenshot of Ocean Solaris](https://github.com/magdhamilt/ocean-solaris/blob/master/screenshots/solaris2.jpg)
-![Screenshot of Ocean Solaris](https://github.com/magdhamilt/ocean-solaris/blob/master/screenshots/solaris3.jpg)
+
+<p align="center">
+  <img src="https://github.com/magdhamilt/ocean-solaris/blob/master/screenshots/solaris2.jpg" width="250" />
+  <img src="https://github.com/magdhamilt/ocean-solaris/blob/master/screenshots/solaris3.jpg" width="250" />
+</p>
 
 ## Links
 
