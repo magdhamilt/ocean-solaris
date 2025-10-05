@@ -29,8 +29,8 @@ class SolarisStarfield {
             
             // Nebulae
             nebulaCount: options.nebulaCount || 3,
-            nebulaParticles: options.nebulaParticles || 150,
-            nebulaRadius: options.nebulaRadius || 12,
+            nebulaParticles: options.nebulaParticles || 200,
+            nebulaRadius: options.nebulaRadius || 15,
             
             // Visual
             twinkleSpeed: options.twinkleSpeed || 0.5,
@@ -189,23 +189,24 @@ class SolarisStarfield {
         for (let i = 0; i < count; i++) {
             const i3 = i * 3;
             
-            // Clustered gaussian distribution
+            // More dispersed gaussian distribution
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.acos(2 * Math.random() - 1);
-            const r = Math.pow(Math.random(), 0.4) * radius;
+            const r = Math.pow(Math.random(), 0.3) * radius; // More spread out
             
             positions[i3] = center.x + r * Math.sin(phi) * Math.cos(theta);
             positions[i3 + 1] = center.y + r * Math.sin(phi) * Math.sin(theta);
             positions[i3 + 2] = center.z + r * Math.cos(phi);
             
-            // Nebula color with variation
-            const brightness = 0.3 + Math.random() * 0.5;
-            colors[i3] = color.r * brightness;
-            colors[i3 + 1] = color.g * brightness;
-            colors[i3 + 2] = color.b * brightness;
+            // Nebula color with more variation
+            const brightness = 0.2 + Math.random() * 0.4;
+            const colorVariation = 0.7 + Math.random() * 0.6;
+            colors[i3] = color.r * brightness * colorVariation;
+            colors[i3 + 1] = color.g * brightness * colorVariation;
+            colors[i3 + 2] = color.b * brightness * colorVariation;
             
-            // Larger, softer particles
-            sizes[i] = 3.0 + Math.random() * 8.0;
+            // Smaller, more varied particles
+            sizes[i] = 2.0 + Math.random() * 6.0;
         }
         
         return { positions, colors, sizes };
@@ -232,7 +233,7 @@ class SolarisStarfield {
                     true,
                     null
                 ),
-                opacity: 0.6
+                opacity: 0.75
             },
             {
                 name: 'midrange',
@@ -243,7 +244,7 @@ class SolarisStarfield {
                     true,
                     clusters
                 ),
-                opacity: 0.85
+                opacity: 0.9
             },
             {
                 name: 'foreground',
@@ -293,10 +294,10 @@ class SolarisStarfield {
                         float twinkle = sin(uTime * uTwinkleSpeed * twinkleFreq + uLayerOffset + 
                                           position.x * 0.02 + position.y * 0.02 + position.z * 0.02) * 0.25 + 0.75;
                         
-                        // Distance-based scaling
-                        float scaleFactor = 200.0;
+                        // Distance-based scaling with better visibility at distance
+                        float scaleFactor = 220.0;
                         gl_PointSize = size * twinkle * scaleFactor / vDistance;
-                        gl_PointSize = max(0.5, min(gl_PointSize, 15.0));
+                        gl_PointSize = max(1.0, min(gl_PointSize, 18.0));
                         
                         gl_Position = projectionMatrix * mvPosition;
                     }
@@ -317,8 +318,9 @@ class SolarisStarfield {
                         float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
                         alpha = pow(alpha, glowPower);
                         
-                        // Distance fade
-                        float distanceFade = 1.0 - smoothstep(30.0, 120.0, vDistance);
+                        // Less aggressive distance fade
+                        float distanceFade = 1.0 - smoothstep(40.0, 150.0, vDistance);
+                        distanceFade = max(distanceFade, 0.3); // Minimum visibility
                         alpha *= uBaseOpacity * distanceFade;
                         
                         // Enhanced glow for brighter stars
@@ -341,13 +343,13 @@ class SolarisStarfield {
         
         // Create nebulae
         const nebulaColors = [
-            { r: 0.8, g: 0.3, b: 0.4 },  // Red (echoing Solaris red sun)
-            { r: 0.3, g: 0.5, b: 0.9 },  // Blue (echoing blue sun)
-            { r: 0.6, g: 0.3, b: 0.8 }   // Purple
+            { r: 0.7, g: 0.25, b: 0.35 },  // Subtle red (echoing Solaris red sun)
+            { r: 0.25, g: 0.4, b: 0.75 },  // Subtle blue (echoing blue sun)
+            { r: 0.5, g: 0.25, b: 0.65 }   // Subtle purple
         ];
         
         for (let i = 0; i < this.options.nebulaCount; i++) {
-            const center = this.generateSphericalPosition(45, 70);
+            const center = this.generateSphericalPosition(45, 75);
             const color = nebulaColors[i % nebulaColors.length];
             const nebulaData = this.createNebula(center, this.options.nebulaRadius, color);
             
@@ -359,7 +361,7 @@ class SolarisStarfield {
             const material = new THREE.ShaderMaterial({
                 uniforms: {
                     uTime: { value: 0 },
-                    uOpacity: { value: 0.15 }
+                    uOpacity: { value: 0.08 }
                 },
                 vertexShader: `
                     attribute float size;
@@ -373,12 +375,12 @@ class SolarisStarfield {
                         vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
                         vDistance = -mvPosition.z;
                         
-                        // Slow pulsing
-                        float pulse = sin(uTime * 0.2 + position.x * 0.05) * 0.3 + 0.7;
+                        // Very slow, subtle pulsing
+                        float pulse = sin(uTime * 0.15 + position.x * 0.03 + position.z * 0.03) * 0.2 + 0.8;
                         
-                        float scaleFactor = 250.0;
+                        float scaleFactor = 280.0;
                         gl_PointSize = size * pulse * scaleFactor / vDistance;
-                        gl_PointSize = max(1.0, min(gl_PointSize, 40.0));
+                        gl_PointSize = max(1.0, min(gl_PointSize, 50.0));
                         
                         gl_Position = projectionMatrix * mvPosition;
                     }
@@ -395,8 +397,11 @@ class SolarisStarfield {
                         
                         // Very soft, diffuse glow
                         float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
-                        alpha = pow(alpha, 0.8);
+                        alpha = pow(alpha, 0.6); // More diffuse
                         alpha *= uOpacity;
+                        
+                        // Add slight variation based on distance from center
+                        alpha *= 0.5 + 0.5 * (1.0 - dist);
                         
                         gl_FragColor = vec4(vColor, alpha);
                     }
@@ -450,14 +455,14 @@ class SolarisStarfield {
     setOpacity(opacity) {
         this.starfields.forEach((starfield, index) => {
             if (starfield.material.uniforms) {
-                const layerOpacity = [0.6, 0.85, 1.0][index] || 1.0;
+                const layerOpacity = [0.75, 0.9, 1.0][index] || 1.0;
                 starfield.material.uniforms.uBaseOpacity.value = this.options.baseOpacity * layerOpacity * opacity;
             }
         });
         
         this.nebulae.forEach(nebula => {
             if (nebula.material.uniforms) {
-                nebula.material.uniforms.uOpacity.value = 0.15 * opacity;
+                nebula.material.uniforms.uOpacity.value = 0.08 * opacity;
             }
         });
     }
