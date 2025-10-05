@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import SolarisFog from './fog.js';
-import SolarisSimulacra from './simulacra.js';
+import SolarisFormations from './simulacra.js';
 import { createSuns } from './suns.js';
 import SolarisStarfield from './starfield.js';
 import { SolarisMist } from './mist.js';
@@ -124,7 +124,7 @@ class PlasmaFountain {
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 const fog = new SolarisFog(scene);
-const simulacra = new SolarisSimulacra(scene, 5);
+const formations = new SolarisFormations(scene, 5);
 const suns = createSuns(scene);
 const starfield = new SolarisStarfield(scene, {
     starCount: 1200,
@@ -646,7 +646,7 @@ function animate () {
     ectoplasmMaterial.uniforms.uTime.value = elapsedTime;
 
     fog.update(deltaTime);
-    simulacra.update(deltaTime);
+    formations.update(deltaTime);
     suns.update(deltaTime);
     starfield.update(deltaTime);
     mist.update(deltaTime); 
