@@ -133,8 +133,8 @@ Dual-mode camera system:
 ## Screenshots
 
 <p align="center">
-  <img src="https://github.com/magdhamilt/ocean-solaris/blob/master/screenshots/solaris2.jpg" width="250" />
   <img src="https://github.com/magdhamilt/ocean-solaris/blob/master/screenshots/solaris3.jpg" width="250" />
+  <img src="https://github.com/magdhamilt/ocean-solaris/blob/master/screenshots/solaris2.jpg" width="250" />
   <img src="https://github.com/magdhamilt/ocean-solaris/blob/master/screenshots/solaris4.jpg" width="250" />
 </p>
 
