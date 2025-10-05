@@ -4,6 +4,8 @@ A simulation of a gelatinous, shape-shifting ocean inspired by Stanislaw Lem’s
 
 This project aims to bring to life the mysterious, ever-changing alien entity from the classic sci-fi novel, featuring dynamic morphing, ethereal movements, and hypnotic visual patterns. 
 
+![Screenshot of Ocean Solaris](https://github.com/magdhamilt/ocean-solaris/blob/master/screenshots/solaris1.jpg)
+
 Demo available [here](https://magdhamilt.github.io/ocean-solaris/).
 
 ## Table of Contents
