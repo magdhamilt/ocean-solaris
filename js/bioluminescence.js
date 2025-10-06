@@ -83,7 +83,7 @@ export class SolarisBioluminescence {
         transparent: true,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
-        side: THREE.DoubleSide
+        side: THREE.FrontSide
       });
       
       const orb = new THREE.Mesh(orbGeometry, orbMaterial);
