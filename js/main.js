@@ -650,7 +650,7 @@ function animate () {
     suns.update(deltaTime);
     starfield.update(deltaTime);
     mist.update(deltaTime); 
-    bioluminescence.update(deltaTime);
+    bioluminescence.update(deltaTime, observationIntensity);
     updateObservation();
     updatePlasmaEruptions(deltaTime, elapsedTime);
     

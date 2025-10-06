@@ -223,7 +223,7 @@ export class SolarisBioluminescence {
     }
   }
   
-  update(deltaTime) {
+  update(deltaTime, observationIntensity = 0) {
     this.time += deltaTime;
     
     // Update light orbs
@@ -283,15 +283,16 @@ export class SolarisBioluminescence {
         // Cooldown period
         discharge.userData.cooldown -= deltaTime;
         
-        if (discharge.userData.cooldown <= 0) {
-          // Random chance to fire
-          if (Math.random() < 0.01) {
-            discharge.userData.active = true;
-            discharge.userData.activeTime = 0;
-          } else {
-            discharge.userData.cooldown = 1.0; // Check again soon
-          }
-        }
+      if (discharge.userData.cooldown <= 0) {
+    // Guaranteed discharge after cooldown
+    discharge.userData.active = true;
+    discharge.userData.activeTime = 0;
+    
+    // Shorter cooldowns when observed (ocean is more active)
+    const baseCooldown = 4.0;
+    const observationModifier = 1.0 - (observationIntensity * 0.5); // Up to 50% faster
+    discharge.userData.cooldown = (baseCooldown + Math.random() * 4.0) * observationModifier;
+      }
       }
     });
   }
