@@ -143,3 +143,5 @@ Dual-mode camera system:
 - [Demo link](https://magdhamilt.github.io/ocean-solaris/)
 - [Three.js Documentation](https://threejs.org/docs/)
 - [Solaris (novel) - Wikipedia](https://en.wikipedia.org/wiki/Solaris_(novel))
+
+Created by Magda Hamilton
