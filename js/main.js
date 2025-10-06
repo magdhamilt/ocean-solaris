@@ -538,7 +538,7 @@ const ectoplasmMaterial = new THREE.ShaderMaterial({
     transparent: true,
     blending: THREE.NormalBlending,
     depthWrite: true,
-    side: THREE.DoubleSide
+    side: THREE.FrontSide
 });
 
 //Sphere for planet-scale ectoplasm with LOD system
