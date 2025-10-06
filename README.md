@@ -12,6 +12,7 @@ Demo available [here](https://magdhamilt.github.io/ocean-solaris/).
 - [Camera Controls](#camera-controls)
 - [Technical Details](#technical-details)
 - [Screenshots](#screenshots)
+- [License](#license)
 - [Links](#links)
 
 ## Description
@@ -138,10 +139,15 @@ Dual-mode camera system:
   <img src="https://github.com/magdhamilt/ocean-solaris/blob/master/screenshots/solaris4.jpg" width="250" />
 </p>
 
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 ## Links
 
 - [Demo link](https://magdhamilt.github.io/ocean-solaris/)
 - [Three.js Documentation](https://threejs.org/docs/)
 - [Solaris (novel) - Wikipedia](https://en.wikipedia.org/wiki/Solaris_(novel))
+
 
 Created by Magda Hamilton
