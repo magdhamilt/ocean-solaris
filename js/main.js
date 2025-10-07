@@ -653,6 +653,135 @@ function animate () {
     bioluminescence.update(deltaTime, observationIntensity);
     updateObservation();
     updatePlasmaEruptions(deltaTime, elapsedTime);
+
+    // Enhanced movement system with smooth mode transition
+const surfaceThreshold = 8.0;
+const transitionRange = 2.0; // Distance over which to blend between modes
+const transitionStart = surfaceThreshold - transitionRange;
+const transitionEnd = surfaceThreshold + transitionRange;
+
+// Calculate blend factor (0 = full surface mode, 1 = full orbit mode)
+let modeBlend = 0;
+if (cameraDistance <= transitionStart) {
+    modeBlend = 0; // Pure surface mode
+} else if (cameraDistance >= transitionEnd) {
+    modeBlend = 1; // Pure orbit mode
+} else {
+    // Smooth interpolation between modes
+    modeBlend = (cameraDistance - transitionStart) / (transitionRange * 2);
+    modeBlend = modeBlend * modeBlend * (3 - 2 * modeBlend); // Smoothstep for ease-in-out
+}
+
+// Surface mode movement
+let surfaceMovement = new THREE.Vector3();
+if (keys['w'] || keys['arrowup']) {
+    surfaceMovement.x += Math.sin(cameraAngleY) * moveSpeed;
+    surfaceMovement.z += Math.cos(cameraAngleY) * moveSpeed;
+}
+if (keys['s'] || keys['arrowdown']) {
+    surfaceMovement.x -= Math.sin(cameraAngleY) * moveSpeed;
+    surfaceMovement.z -= Math.cos(cameraAngleY) * moveSpeed;
+}
+if (keys['a'] || keys['arrowleft']) {
+    surfaceMovement.x += Math.cos(cameraAngleY) * moveSpeed;
+    surfaceMovement.z -= Math.sin(cameraAngleY) * moveSpeed;
+}
+if (keys['d'] || keys['arrowright']) {
+    surfaceMovement.x -= Math.cos(cameraAngleY) * moveSpeed;
+    surfaceMovement.z += Math.sin(cameraAngleY) * moveSpeed;
+}
+
+// Orbit mode angle changes
+let orbitAngleChangeX = 0;
+let orbitAngleChangeY = 0;
+if (keys['w'] || keys['arrowup']) orbitAngleChangeX -= 0.02;
+if (keys['s'] || keys['arrowdown']) orbitAngleChangeX += 0.02;
+if (keys['a'] || keys['arrowleft']) orbitAngleChangeY -= 0.02;
+if (keys['d'] || keys['arrowright']) orbitAngleChangeY += 0.02;
+
+// Blend between surface and orbit movement
+if (modeBlend < 1.0) {
+    // Apply surface movement (reduced as we transition out)
+    const surfaceInfluence = 1.0 - modeBlend;
+    camera.position.x += surfaceMovement.x * surfaceInfluence;
+    camera.position.z += surfaceMovement.z * surfaceInfluence;
+}
+
+if (modeBlend > 0.0) {
+    // Apply orbit movement (increased as we transition in)
+    const orbitInfluence = modeBlend;
+    cameraAngleX += orbitAngleChangeX * orbitInfluence;
+    cameraAngleY += orbitAngleChangeY * orbitInfluence;
+}
+
+// Clamp vertical angle
+cameraAngleX = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraAngleX));
+
+// Calculate final position - blend between surface-locked and orbital
+if (modeBlend < 1.0) {
+    // Surface mode component - normalize to sphere
+    const normalizedPos = new THREE.Vector3(
+        camera.position.x, 
+        camera.position.y, 
+        camera.position.z
+    ).normalize();
+    const surfacePos = normalizedPos.multiplyScalar(cameraDistance);
+    
+    // Orbit mode component - spherical coordinates
+    const orbitPos = new THREE.Vector3(
+        Math.cos(cameraAngleX) * Math.sin(cameraAngleY) * cameraDistance,
+        Math.sin(cameraAngleX) * cameraDistance,
+        Math.cos(cameraAngleX) * Math.cos(cameraAngleY) * cameraDistance
+    );
+    
+    // Blend between the two positions
+    camera.position.lerpVectors(surfacePos, orbitPos, modeBlend);
+} else {
+    // Pure orbit mode
+    camera.position.x = Math.cos(cameraAngleX) * Math.sin(cameraAngleY) * cameraDistance;
+    camera.position.y = Math.sin(cameraAngleX) * cameraDistance;
+    camera.position.z = Math.cos(cameraAngleX) * Math.cos(cameraAngleY) * cameraDistance;
+}
+
+// Zoom controls
+if (keys['q'] || keys[' ']) {
+    cameraDistance += zoomSpeed;
+    cameraDistance = Math.min(cameraDistance, maxDistance);
+}
+if (keys['e'] || keys['shift']) {
+    cameraDistance -= zoomSpeed;
+    cameraDistance = Math.max(cameraDistance, minDistance);
+}
+
+// Camera look target - blend between surface-walking view and center-focused view
+if (modeBlend < 1.0) {
+    // Surface mode look direction
+    const lookDirection = new THREE.Vector3(
+        Math.sin(cameraAngleY) * Math.cos(cameraAngleX),
+        Math.sin(cameraAngleX),
+        Math.cos(cameraAngleY) * Math.cos(cameraAngleX)
+    );
+    
+    const surfaceLookTarget = new THREE.Vector3(
+        camera.position.x + lookDirection.x,
+        camera.position.y + lookDirection.y,
+        camera.position.z + lookDirection.z
+    );
+    
+    // Orbit mode looks at center
+    const orbitLookTarget = new THREE.Vector3(0, 0, 0);
+    
+    // Blend look targets
+    const blendedLookTarget = new THREE.Vector3().lerpVectors(
+        surfaceLookTarget, 
+        orbitLookTarget, 
+        modeBlend
+    );
+    
+    camera.lookAt(blendedLookTarget);
+} else {
+    camera.lookAt(0, 0, 0);
+}
     
     // Update sun positions for engineering visualization
     const sunsData = suns.getSuns();
@@ -664,68 +793,6 @@ function animate () {
     // Make engineering intensity pulse slowly for living effect
     ectoplasmMaterial.uniforms.uEngineeringIntensity.value = 
         1.3 + Math.sin(clock.getElapsedTime() * 0.4) * 0.3;
-    
-    // Enhanced movement system
-    const surfaceThreshold = 8.0;
-    const isSurfaceMode = cameraDistance < surfaceThreshold;
-    
-    if (isSurfaceMode) {
-        if (keys['w'] || keys['arrowup']) {
-            camera.position.x += Math.sin(cameraAngleY) * moveSpeed;
-            camera.position.z += Math.cos(cameraAngleY) * moveSpeed;
-        }
-        if (keys['s'] || keys['arrowdown']) {
-            camera.position.x -= Math.sin(cameraAngleY) * moveSpeed;
-            camera.position.z -= Math.cos(cameraAngleY) * moveSpeed;
-        }
-        if (keys['a'] || keys['arrowleft']) {
-            camera.position.x += Math.cos(cameraAngleY) * moveSpeed;
-            camera.position.z -= Math.sin(cameraAngleY) * moveSpeed;
-        }
-        if (keys['d'] || keys['arrowright']) {
-            camera.position.x -= Math.cos(cameraAngleY) * moveSpeed;
-            camera.position.z += Math.sin(cameraAngleY) * moveSpeed;
-        }
-        
-        const normalizedPos = new THREE.Vector3(camera.position.x, camera.position.y, camera.position.z).normalize();
-        camera.position.copy(normalizedPos.multiplyScalar(cameraDistance));
-    } else {
-        if (keys['w'] || keys['arrowup']) cameraAngleX -= 0.02;
-        if (keys['s'] || keys['arrowdown']) cameraAngleX += 0.02;
-        if (keys['a'] || keys['arrowleft']) cameraAngleY -= 0.02;
-        if (keys['d'] || keys['arrowright']) cameraAngleY += 0.02;
-        
-        cameraAngleX = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraAngleX));
-        
-        camera.position.x = Math.cos(cameraAngleX) * Math.sin(cameraAngleY) * cameraDistance;
-        camera.position.y = Math.sin(cameraAngleX) * cameraDistance;
-        camera.position.z = Math.cos(cameraAngleX) * Math.cos(cameraAngleY) * cameraDistance;
-    }
-    
-    if (keys['q'] || keys[' ']) {
-        cameraDistance += zoomSpeed;
-        cameraDistance = Math.min(cameraDistance, maxDistance);
-    }
-    if (keys['e'] || keys['shift']) {
-        cameraDistance -= zoomSpeed;
-        cameraDistance = Math.max(cameraDistance, minDistance);
-    }
-    
-    if (isSurfaceMode) {
-        const lookDirection = new THREE.Vector3(
-            Math.sin(cameraAngleY) * Math.cos(cameraAngleX),
-            Math.sin(cameraAngleX),
-            Math.cos(cameraAngleY) * Math.cos(cameraAngleX)
-        );
-        
-        camera.lookAt(
-            camera.position.x + lookDirection.x,
-            camera.position.y + lookDirection.y,
-            camera.position.z + lookDirection.z
-        );
-    } else {
-        camera.lookAt(0, 0, 0);
-    }
     
     // Update LOD based on camera distance
     lod.update(camera);
