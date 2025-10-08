@@ -148,6 +148,9 @@ fog.setSunData(suns.getSuns());
 
 //Camera - positioned on the surface        
 camera.position.set(0, 5.1, 0);
+camera.near = 0.01;
+camera.far = 1000;
+camera.updateProjectionMatrix();
 
 //Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true});
@@ -537,8 +540,8 @@ const ectoplasmMaterial = new THREE.ShaderMaterial({
     fragmentShader,
     transparent: true,
     blending: THREE.NormalBlending,
-    depthWrite: true,
-    side: THREE.FrontSide
+    depthWrite: false,
+    side: THREE.DoubleSide
 });
 
 //Sphere for planet-scale ectoplasm with LOD system
@@ -548,16 +551,19 @@ const lod = new THREE.LOD();
 const geometryHigh = new THREE.SphereGeometry(5, 128, 128);
 const planetHigh = new THREE.Mesh(geometryHigh, ectoplasmMaterial);
 lod.addLevel(planetHigh, 0);
+planetHigh.frustumCulled = false;
 
 // Medium detail - mid distance
 const geometryMedium = new THREE.SphereGeometry(5, 64, 64);
 const planetMedium = new THREE.Mesh(geometryMedium, ectoplasmMaterial);
 lod.addLevel(planetMedium, 10);
+planetMedium.frustumCulled = false;
 
 // Low detail - far away
 const geometryLow = new THREE.SphereGeometry(5, 32, 32);
 const planetLow = new THREE.Mesh(geometryLow, ectoplasmMaterial);
 lod.addLevel(planetLow, 20);
+planetLow.frustumCulled = false;
 
 scene.add(lod);
 
