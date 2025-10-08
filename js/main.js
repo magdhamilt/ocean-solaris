@@ -6,6 +6,8 @@ import SolarisStarfield from './starfield.js';
 import { SolarisMist } from './mist.js';
 import { SolarisBioluminescence } from './bioluminescence.js';
 
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
 //Plasma Fountain Class
 class PlasmaFountain {
     constructor(scene, position) {
@@ -170,6 +172,13 @@ const keys = {};
 document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
 document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
 
+// Touch control variables
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartDistance = 0;
+let isTouching = false;
+let isPinching = false;
+
 document.addEventListener('mousemove', (event) => {
     if (event.buttons === 1) {
         cameraAngleY -= event.movementX * 0.005;
@@ -182,6 +191,58 @@ document.addEventListener('wheel', (event) => {
     event.preventDefault();
     cameraDistance += event.deltaY * 0.01;
     cameraDistance = Math.max(minDistance, Math.min(maxDistance, cameraDistance));
+});
+
+// Touch controls for mobile
+document.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+        isTouching = true;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    } else if (e.touches.length === 2) {
+        isPinching = true;
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        touchStartDistance = Math.sqrt(dx * dx + dy * dy);
+    }
+});
+
+document.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    
+    if (isTouching && e.touches.length === 1) {
+        const deltaX = e.touches[0].clientX - touchStartX;
+        const deltaY = e.touches[0].clientY - touchStartY;
+        
+        cameraAngleY -= deltaX * 0.005;
+        cameraAngleX -= deltaY * 0.005;
+        cameraAngleX = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraAngleX));
+        
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    } else if (isPinching && e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        const delta = touchStartDistance - distance;
+        cameraDistance += delta * 0.02;
+        cameraDistance = Math.max(minDistance, Math.min(maxDistance, cameraDistance));
+        
+        touchStartDistance = distance;
+    }
+}, { passive: false });
+
+document.addEventListener('touchend', (e) => {
+    if (e.touches.length === 0) {
+        isTouching = false;
+        isPinching = false;
+    } else if (e.touches.length === 1) {
+        isPinching = false;
+        isTouching = true;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    }
 });
 
 //Environment Map for Metallic Reflection
@@ -570,6 +631,15 @@ scene.add(lod);
 // Keep reference to LOD for raycasting (use highest detail mesh)
 const planet = planetHigh;
 
+// Mobile performance optimizations
+if (isMobile) {
+    // Reduce formations for better performance
+    formations.maxFormations = 3;
+    
+    // Adjust renderer for mobile
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+}
+
 //Intelligent Observation System
 let observationIntensity = 0;
 const raycast = new THREE.Raycaster();
@@ -639,6 +709,90 @@ function updatePlasmaEruptions(deltaTime, time) {
         createPlasmaEruption();
         timeSinceLastEruption = 0;
     }
+}
+
+// Mobile on-screen controls
+if (isMobile) {
+    const controlsHTML = `
+        <style>
+            .mobile-controls {
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 10px;
+                z-index: 1000;
+                pointer-events: none;
+            }
+            .control-btn {
+                width: 60px;
+                height: 60px;
+                background: rgba(255, 255, 255, 0.2);
+                border: 2px solid rgba(255, 255, 255, 0.5);
+                border-radius: 50%;
+                color: white;
+                font-size: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                pointer-events: auto;
+                user-select: none;
+                backdrop-filter: blur(10px);
+                touch-action: manipulation;
+            }
+            .control-btn:active {
+                background: rgba(255, 255, 255, 0.4);
+                transform: scale(0.95);
+            }
+            .zoom-controls {
+                position: fixed;
+                right: 20px;
+                bottom: 20px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                z-index: 1000;
+            }
+        </style>
+        <div class="mobile-controls">
+            <button class="control-btn" id="btn-left">◄</button>
+            <button class="control-btn" id="btn-forward">▲</button>
+            <button class="control-btn" id="btn-back">▼</button>
+            <button class="control-btn" id="btn-right">►</button>
+        </div>
+        <div class="zoom-controls">
+            <button class="control-btn" id="btn-zoom-in">+</button>
+            <button class="control-btn" id="btn-zoom-out">−</button>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', controlsHTML);
+    
+    const btnForward = document.getElementById('btn-forward');
+    const btnBack = document.getElementById('btn-back');
+    const btnLeft = document.getElementById('btn-left');
+    const btnRight = document.getElementById('btn-right');
+    const btnZoomIn = document.getElementById('btn-zoom-in');
+    const btnZoomOut = document.getElementById('btn-zoom-out');
+    
+    btnForward.addEventListener('touchstart', (e) => { e.preventDefault(); keys['w'] = true; });
+    btnForward.addEventListener('touchend', (e) => { e.preventDefault(); keys['w'] = false; });
+    
+    btnBack.addEventListener('touchstart', (e) => { e.preventDefault(); keys['s'] = true; });
+    btnBack.addEventListener('touchend', (e) => { e.preventDefault(); keys['s'] = false; });
+    
+    btnLeft.addEventListener('touchstart', (e) => { e.preventDefault(); keys['a'] = true; });
+    btnLeft.addEventListener('touchend', (e) => { e.preventDefault(); keys['a'] = false; });
+    
+    btnRight.addEventListener('touchstart', (e) => { e.preventDefault(); keys['d'] = true; });
+    btnRight.addEventListener('touchend', (e) => { e.preventDefault(); keys['d'] = false; });
+    
+    btnZoomIn.addEventListener('touchstart', (e) => { e.preventDefault(); keys['e'] = true; });
+    btnZoomIn.addEventListener('touchend', (e) => { e.preventDefault(); keys['e'] = false; });
+    
+    btnZoomOut.addEventListener('touchstart', (e) => { e.preventDefault(); keys['q'] = true; });
+    btnZoomOut.addEventListener('touchend', (e) => { e.preventDefault(); keys['q'] = false; });
 }
 
 //Animate
