@@ -410,7 +410,7 @@ float calculateEngineeringZone(vec3 sunPos, vec3 sunColor, int sunIndex) {
     vec3 toSun = normalize(sunPos - vWorldPos);
     
     float sunAlignment = max(0.0, dot(normalizedPos, toSun));
-    float zoneIntensity = pow(sunAlignment, 2.0);
+    float zoneIntensity = pow(sunAlignment, 0.8);
     
     vec2 pulseCoord = vUv * 4.0 + uTime * 0.08 * float(sunIndex + 1);
     float pulse = fbm(pulseCoord);
@@ -420,13 +420,13 @@ float calculateEngineeringZone(vec3 sunPos, vec3 sunColor, int sunIndex) {
     float wave = sin(distance * 0.4 - uTime * 2.5 + float(sunIndex) * 3.14159) * 0.5 + 0.5;
     
     float interference = sin(sunAlignment * 15.0 - uTime * 1.8) * 0.5 + 0.5;
-    interference = smoothstep(0.4, 0.6, interference);
+    interference = smoothstep(0.3, 0.7, interference);
     
-    float activity = zoneIntensity * pulse * wave;
-    activity = smoothstep(0.25, 0.85, activity);
+    float activity = zoneIntensity * pulse * wave * 0.6;
+    activity = smoothstep(0.1, 0.9, activity);
     
     float rings = sin(sunAlignment * 25.0 - uTime * 1.2) * 0.5 + 0.5;
-    activity += rings * zoneIntensity * interference * 0.4;
+    activity += rings * zoneIntensity * interference * 0.2;
     
     return activity;
 }
@@ -452,19 +452,20 @@ void main() {
     float redEngineering = calculateEngineeringZone(uRedSunPos, uRedSunColor, 0);
     float blueEngineering = calculateEngineeringZone(uBlueSunPos, uBlueSunColor, 1);
     
-    float totalEngineering = (redEngineering + blueEngineering) * uEngineeringIntensity;
+    float totalEngineering = (redEngineering + blueEngineering) * uEngineeringIntensity * 0.5;
     
     vec3 redZoneColor = mix(uEngineeringColor, uRedSunColor, 0.3);
     vec3 blueZoneColor = mix(uEngineeringColor, uBlueSunColor, 0.3);
-    vec3 engineeringGlow = redZoneColor * redEngineering + blueZoneColor * blueEngineering;
+    vec3 engineeringGlow = mix(redZoneColor * redEngineering, blueZoneColor * blueEngineering, 
+                           blueEngineering / (redEngineering + blueEngineering + 0.001));
     
-    float engineeringEdge = length(fwidth(totalEngineering)) * 60.0;
-    totalEngineering += engineeringEdge * 0.6;
+    float engineeringEdge = length(fwidth(totalEngineering)) * 20.0;
+    totalEngineering += engineeringEdge * 0.2;
     totalEngineering = clamp(totalEngineering, 0.0, 1.0);
     
     float neuralPattern = fbm(vUv * 8.0 + uTime * 0.05);
-    neuralPattern = smoothstep(0.45, 0.55, neuralPattern);
-    totalEngineering += neuralPattern * totalEngineering * 0.3;
+    neuralPattern = smoothstep(0.4, 0.6, neuralPattern);
+    totalEngineering += neuralPattern * totalEngineering * 0.15;
     // === END ENGINEERING ===
     
     // === OBSERVATION RESPONSE ===
@@ -539,7 +540,7 @@ void main() {
     // Blend in engineering activity - modulated by viscosity
     // More viscous areas show less engineering (they're "slower" to respond)
     float engineeringVisibility = totalEngineering * mix(0.9, 0.4, viscosity);
-    baseColor = mix(baseColor, engineeringGlow, engineeringVisibility * 0.7);
+    baseColor = mix(baseColor, engineeringGlow, engineeringVisibility * 0.3);
     
     // Add observation response - the ocean becomes more luminous where observed
     vec3 awarenessColor = mix(uHighlight1, uHighlight2, consciousnessPulse);
@@ -568,10 +569,10 @@ void main() {
     float pulse = 0.5 + 0.5 * sin(vPos.x*2.0 + vPos.y*2.0 + vPos.z*2.0 + uTime*3.0);
     vec3 glowColor = mix(uAccentRed, uAccentBlue, sin(uTime * 0.5) * 0.5 + 0.5);
     
-    color += fresnel * glowColor * uGlowIntensity * pulse * 0.4;
-    color += fresnel * sunTint * 0.5;
-    color += engineeringGlow * totalEngineering * 0.4;
-    color += engineeringEdge * engineeringGlow * 0.3;
+    color += fresnel * glowColor * uGlowIntensity * pulse * 0.2;
+    color += fresnel * sunTint * 0.3;
+    color += engineeringGlow * totalEngineering * 0.2;
+    color += engineeringEdge * engineeringGlow * 0.15;
     
     // Add observation glow - makes the observed area more vibrant
     color += awarenessColor * awareness * 0.6;
@@ -601,8 +602,8 @@ const ectoplasmMaterial = new THREE.ShaderMaterial({
     fragmentShader,
     transparent: true,
     blending: THREE.NormalBlending,
-    depthWrite: false,
-    side: THREE.DoubleSide
+    depthWrite: true,
+    side: THREE.FrontSide
 });
 
 //Sphere for planet-scale ectoplasm with LOD system
@@ -956,6 +957,15 @@ if (modeBlend < 1.0) {
     
     // Update LOD based on camera distance
     lod.update(camera);
+    
+    planet.rotation.y += 0.001;
+     // Make sure ocean renders last to avoid black holes
+    scene.traverse((object) => {
+        if (object.isMesh && object !== planetHigh) {
+            object.renderOrder = 1;
+        }
+    });
+    planetHigh.renderOrder = 2;
     
     planet.rotation.y += 0.001;
     renderer.render(scene, camera);
