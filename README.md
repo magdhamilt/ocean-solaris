@@ -13,6 +13,7 @@ Demo available [here](https://magdhamilt.github.io/ocean-solaris/).
 - [Technical Details](#technical-details)
 - [Screenshots](#screenshots)
 - [License](#license)
+- [Compatibility](#compatibility)
 - [Links](#links)
 
 ## Description
@@ -142,6 +143,11 @@ Dual-mode camera system:
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Compatibility
+
+- 💻 Desktop (Windows, macOS, Linux)
+- 📱 Mobile (Android, iOS)
 
 ## Links
 
