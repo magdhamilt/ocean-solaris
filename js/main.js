@@ -116,9 +116,12 @@ class PlasmaFountain {
     }
     
     destroy() {
-        this.scene.remove(this.mesh);
-        this.geometry.dispose();
-        this.material.dispose();
+    this.scene.remove(this.mesh);
+    this.geometry.dispose();
+    this.material.dispose();
+    this.mesh = null;
+    this.geometry = null;
+    this.material = null;
     }
 }
 
