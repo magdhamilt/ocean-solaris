@@ -250,14 +250,23 @@ document.addEventListener('touchend', (e) => {
 
 //Environment Map for Metallic Reflection
 const loader = new THREE.CubeTextureLoader();
-const envMap = loader.load([
-    'https://threejs.org/examples/textures/cube/Bridge2/posx.jpg',
-    'https://threejs.org/examples/textures/cube/Bridge2/negx.jpg',
-    'https://threejs.org/examples/textures/cube/Bridge2/posy.jpg',
-    'https://threejs.org/examples/textures/cube/Bridge2/negy.jpg',
-    'https://threejs.org/examples/textures/cube/Bridge2/posz.jpg',
-    'https://threejs.org/examples/textures/cube/Bridge2/negz.jpg',
-]);
+const envMap = loader.load(
+    [
+        'https://threejs.org/examples/textures/cube/Bridge2/posx.jpg',
+        'https://threejs.org/examples/textures/cube/Bridge2/negx.jpg',
+        'https://threejs.org/examples/textures/cube/Bridge2/posy.jpg',
+        'https://threejs.org/examples/textures/cube/Bridge2/negy.jpg',
+        'https://threejs.org/examples/textures/cube/Bridge2/posz.jpg',
+        'https://threejs.org/examples/textures/cube/Bridge2/negz.jpg',
+    ],
+    undefined,  // onLoad
+    undefined,  // onProgress
+    (error) => {
+        console.error('Failed to load environment map:', error);
+        // Optionally set a fallback or continue without envMap
+        scene.environment = null;
+    }
+);
 
 scene.environment = envMap;
 
