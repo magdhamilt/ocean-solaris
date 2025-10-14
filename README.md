@@ -146,8 +146,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Compatibility
 
-- 💻 Desktop (Windows, macOS, Linux)
-- 📱 Mobile (Android, iOS)
+- Desktop (Windows, macOS, Linux)
+- Mobile (Android, iOS)
 
 ## Links
 
