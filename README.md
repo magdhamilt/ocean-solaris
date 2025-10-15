@@ -158,5 +158,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-Created by [Magda Hamilton](https://magdahamilton.dev)
-Email: hi@magdahamilton.dev
+- Created by [Magda Hamilton](https://magdahamilton.dev)
+- Email: hi@magdahamilton.dev
