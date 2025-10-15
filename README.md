@@ -15,6 +15,7 @@ Demo available [here](https://magdhamilt.github.io/ocean-solaris/).
 - [License](#license)
 - [Compatibility](#compatibility)
 - [Links](#links)
+- [Contact](#contact)
 
 ## Description
 
@@ -155,5 +156,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Three.js Documentation](https://threejs.org/docs/)
 - [Solaris (novel) - Wikipedia](https://en.wikipedia.org/wiki/Solaris_(novel))
 
+## Contact
 
-Created by Magda Hamilton
+Created by [Magda Hamilton](https://magdahamilton.dev)
+Email: hi@magdahamilton.dev
