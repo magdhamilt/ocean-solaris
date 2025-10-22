@@ -19,7 +19,9 @@ Demo available [here](https://magdhamilt.github.io/ocean-solaris/).
 
 ## Description
 
-In Stanisław Lem's novel, the Ocean of Solaris is a sentient, planet-sized entity that has existed for millions of years. Despite decades of research, scientists cannot communicate with or understand this vast alien intelligence. The Ocean spontaneously generates elaborate formations—Symmetriads, Mimoids, Asymmetriads—that have been exhaustively catalogued yet remain incomprehensible. It also materializes "visitors" drawn from researchers' deepest memories, forcing confrontation with humanity's inability to grasp truly alien consciousness.
+In Stanisław Lem's novel, the Ocean of Solaris is a sentient, planet-sized entity that has existed for millions of years. Despite decades of research, scientists cannot communicate with or understand this vast alien intelligence. 
+
+The Ocean spontaneously generates elaborate formations—Symmetriads, Mimoids, Asymmetriads—that have been exhaustively catalogued yet remain incomprehensible. It also materializes "visitors" drawn from researchers' deepest memories, forcing confrontation with humanity's inability to grasp truly alien consciousness.
 
 This project brings that mysterious entity to life through dynamic morphing, ethereal movements, and hypnotic visual patterns that capture the Ocean's unknowable nature.
 
