@@ -145,7 +145,10 @@ Dual-mode camera system:
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project, including its design and code, is licensed under the
+Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License.
+
+© 2025 Magdalena Hamilton. All rights reserved.
 
 ## Compatibility
 
